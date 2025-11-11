@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PARMCO Project - Server</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fdfcfb; color: #292524; }
+        html { scroll-behavior: smooth; }
+        .sticky-nav { position: sticky; top: 0; z-index: 50; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); background-color: rgba(253, 252, 251, 0.8); }
+        .code-block { background-color: #1c1917; color: #e7e5e4; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; font-family: monospace; font-size: 0.875rem; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header & Navigation -->
+    <header class="sticky-nav border-b border-stone-200">
+        <nav class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex-shrink-0">
+                    <span class="text-xl font-bold text-sky-700">PARMCO Project</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="index.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Overview</a>
+                        <a href="hardware.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Hardware</a>
+                        <a href="server.html" class="text-sky-700 font-bold px-3 py-2 rounded-md text-sm">Server</a>
+                        <a href="app.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">App</a>
+                        <a href="controller.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Controller</a>
+                        <a href="documentation.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Documents</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- RPi4 Server Section -->
+        <section id="server" class="py-16">
+            <h2 class="text-3xl font-bold text-center mb-12">The Headless Raspberry Pi Server</h2>
+            <p class="text-center text-lg text-stone-600 max-w-3xl mx-auto mb-12">A major project requirement was that the RPi4 must be "headless," requiring no user interaction. This was achieved with a 3-part software system to automate Bluetooth pairing.</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Card 1 -->
+                <div class="bg-white p-6 rounded-lg shadow-lg border border-stone-100">
+                    <h3 class="text-xl font-semibold">1. Auto-Pairing Agent</h3>
+                    <p class="mt-2 text-stone-600">A custom `systemd` service (`bt-agent.service`) runs `bt-agent -c NoInputNoOutput` on boot. This forces the Pi to automatically accept all pairing requests with no PIN or pop-up.</p>
+                </div>
+                <!-- Card 2 -->
+                <div class="bg-white p-6 rounded-lg shadow-lg border border-stone-100">
+                    <h3 class="text-xl font-semibold">2. "Stale Key" Fix Script</h3>
+                    <p class="mt-2 text-stone-600">A bash script (`clear-bt-devices.sh`) lists all paired devices and removes them one by one. This solves the "stale key" bug that prevented re-pairing.</p>
+                </div>
+                <!-- Card 3 -->
+                <div class="bg-white p-6 rounded-lg shadow-lg border border-stone-100">
+                    <h3 class="text-xl font-semibold">3. Main Server (`parmco.service`)</h3>
+                    <p class="mt-2 text-stone-600">The main C server is run by its own service, which first executes the `clear-bt-devices.sh` script on boot. The C server *also* calls this script on every disconnect, ensuring the Pi is always ready for a fresh connection.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Server Code -->
+        <section id="code" class="py-16 bg-stone-100 rounded-lg">
+            <h2 class="text-3xl font-bold text-center mb-12">Server Code</h2>
+            <div class="space-y-4">
+                <details>
+                    <summary>Show `server.c` (RPi4 Final Code)</summary>
+                    <div class="code-block">
+                        <pre><code>
+#include &lt;stdio.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;string.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;bluetooth/bluetooth.h&gt;
+#include &lt;bluetooth/rfcomm.h&gt;
+#include &lt;pigpio.h&gt;
+#include &lt;pthread.h&gt;
+#include &lt;time.h&gt;
+#include &lt;math.h&gt;
+
+// --- Pin Definitions (BCM) ---
+#define MASTER_ENABLE_PIN 17
+#define PWM_PIN 18
+#define DIR_A_PIN 27
+#define DIR_B_PIN 22
+#define RPM_SENSOR_PIN 23
+
+// --- PWM Settings ---
+#define PWM_FREQUENCY 1000
+#define PWM_RANGE 255
+
+// --- RPM CALCULATION ---
+#define PULSES_PER_REVOLUTION 3.0
+#define RPM_SEND_INTERVAL_MS 250
+#define CALCULATION_INTERVAL_MS 100  // Faster sampling for better control (10Hz)
+
+// --- COMPLEMENTARY FILTER (MINIMAL LAG) ---
+#define COMPLEMENTARY_ALPHA 0.85  // 85% new data, 15% smoothing - very responsive!
+
+volatile unsigned long rpm_pulse_count = 0;
+volatile double current_rpm = 0.0;
+volatile double filtered_rpm = 0.0;
+pthread_mutex_t rpm_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+// --- IMPROVED FEEDBACK CONTROLLER ---
+#define FEEDBACK_INTERVAL_MS 100
+const double feedback_interval_s = 0.1;
+
+// Reduced gains for stability - lower Kp to reduce oscillation
+const double Kp_low = 0.0010;   // For RPM &lt; 4000 (reduced from 0.0015)
+const double Ki_low = 0.010;    
+const double Kd_low = 0.0006;   
+
+const double Kp_high = 0.0014;  // For RPM &gt;= 4000 (reduced from 0.0020)
+const double Ki_high = 0.016;   
+const double Kd_high = 0.0008;  
+
+const double MAX_INTEGRAL = 100.0;
+const double ERROR_DEADBAND = 100.0;  // Increased to absorb ±4% oscillation
+
+// Derivative with higher cutoff (less filtering, more responsive)
+#define DERIVATIVE_FILTER_ALPHA 0.8
+volatile double filtered_derivative = 0.0;
+
+volatile double integral_error = 0.0;
+volatile double previous_error = 0.0;
+volatile int reset_integral_flag = 0;
+volatile double desired_rpm = 0.0;
+volatile int is_automatic_mode = 0;
+
+// --- Global State ---
+int current_speed = 0;
+int motor_enabled = 0;
+
+// --- Function Prototypes ---
+void rpm_callback(int gpio, int level, uint32_t tick);
+
+// --- Helper for milliseconds sleep ---
+void sleep_ms(long milliseconds) {
+    struct timespec ts;
+    ts.tv_sec = milliseconds / 1000;
+    ts.tv_nsec = (milliseconds % 1000) * 1000000;
+    nanosleep(&ts, NULL);
+}
+
+// --- Motor Control Functions ---
+void motor_set_speed(int speed) {
+    if (speed &lt; 0) speed = 0;
+    if (speed &gt; PWM_RANGE) speed = PWM_RANGE;
+    current_speed = speed;
+    int duty_cycle = (int)(((float)current_speed / (float)PWM_RANGE) * 1000000);
+    gpioHardwarePWM(PWM_PIN, PWM_FREQUENCY, duty_cycle);
+    printf("Speed set to %d / 255\n", current_speed);
+    fflush(stdout);
+}
+
+void motor_quiet_state() {
+    is_automatic_mode = 0;
+    reset_integral_flag = 1;
+    gpioWrite(MASTER_ENABLE_PIN, 1);
+    motor_enabled = 0;
+    gpioHardwarePWM(PWM_PIN, PWM_FREQUENCY, 0);
+    current_speed = 0;
+    gpioWrite(DIR_A_PIN, 0);
+    gpioWrite(DIR_B_PIN, 0);
+    filtered_derivative = 0.0;
+    filtered_rpm = 0.0;
+    printf("Motor set to quiet state.\n");
+    fflush(stdout);
+}
+
+void motor_direction_cw() {
+    gpioWrite(DIR_A_PIN, 1);
+    gpioWrite(DIR_B_PIN, 0);
+    printf("Direction: Clockwise\n");
+    fflush(stdout);
+}
+
+void motor_direction_ccw() {
+    gpioWrite(DIR_A_PIN, 0);
+    gpioWrite(DIR_B_PIN, 1);
+    printf("Direction: Counter-Clockwise\n");
+    fflush(stdout);
+}
+
+void motor_toggle_power() {
+    if (motor_enabled) {
+        is_automatic_mode = 0;
+        reset_integral_flag = 1;
+        gpioWrite(MASTER_ENABLE_PIN, 1);
+        motor_enabled = 0;
+        printf("MOTOR POWER: OFF\n");
+        gpioWrite(DIR_A_PIN, 0);
+        gpioWrite(DIR_B_PIN, 0);
+        filtered_derivative = 0.0;
+        filtered_rpm = 0.0;
+    } else {
+        gpioWrite(MASTER_ENABLE_PIN, 0);
+        motor_enabled = 1;
+        printf("MOTOR POWER: ON\n");
+        motor_direction_cw();
+    }
+    fflush(stdout);
+}
+
+// --- RPM CALCULATION with COMPLEMENTARY FILTER ---
+void* rpm_calculator_thread(void *arg) {
+    double calculation_interval_s = CALCULATION_INTERVAL_MS / 1000.0;  // 0.1s
+    int first_reading = 1;
+
+    while(1) {
+        sleep_ms(CALCULATION_INTERVAL_MS);
+        
+        // Atomic pulse count reading
+        gpioSetISRFunc(RPM_SENSOR_PIN, FALLING_EDGE, 0, NULL);
+        unsigned long pulses = rpm_pulse_count;
+        rpm_pulse_count = 0;
+        gpioSetISRFunc(RPM_SENSOR_PIN, FALLING_EDGE, 0, rpm_callback);
+
+        // Calculate instantaneous RPM
+        double revolutions = pulses / PULSES_PER_REVOLUTION;
+        double instantaneous_rpm = (revolutions / calculation_interval_s) * 60.0;
+        
+        pthread_mutex_lock(&rpm_mutex);
+        
+        if (first_reading) {
+            // Initialize filter with first reading
+            filtered_rpm = instantaneous_rpm;
+            first_reading = 0;
+        } else {
+            // Complementary filter: mostly new data, slight smoothing
+            filtered_rpm = COMPLEMENTARY_ALPHA * instantaneous_rpm + 
+                          (1.0 - COMPLEMENTARY_ALPHA) * filtered_rpm;
+        }
+        
+        current_rpm = filtered_rpm;  // Both use filtered value
+        
+        pthread_mutex_unlock(&rpm_mutex);
+    }
+    return NULL;
+}
+
+// --- RPM ISR Callback ---
+void rpm_callback(int gpio, int level, uint32_t tick) {
+    rpm_pulse_count++;
+}
+
+// --- IMPROVED FEEDBACK CONTROLLER ---
+void* feedback_controller_thread(void *arg) {
+    double error;
+    int adjustment;
+    int new_speed;
+    double proportional_term, integral_term, derivative_term;
+    double Kp, Ki, Kd;
+    
+    while(1) {
+        sleep_ms(FEEDBACK_INTERVAL_MS);
+
+        if (reset_integral_flag) {
+            integral_error = 0.0;
+            previous_error = 0.0;
+            filtered_derivative = 0.0;
+            reset_integral_flag = 0;
+        }
+        
+        if (motor_enabled && is_automatic_mode) {
+            
+            pthread_mutex_lock(&rpm_mutex);
+            double rpm_snapshot = current_rpm;
+            pthread_mutex_unlock(&rpm_mutex);
+
+            error = desired_rpm - rpm_snapshot;
+            
+            // Apply deadband to reduce oscillation at steady state
+            double error_for_control = error;
+            if (fabs(error) &lt; ERROR_DEADBAND) {
+                error_for_control = 0.0;
+            }
+            
+            // Adaptive gains based on desired RPM
+            if (desired_rpm &lt; 4000.0) {
+                Kp = Kp_low;
+                Ki = Ki_low;
+                Kd = Kd_low;
+            } else {
+                Kp = Kp_high;
+                Ki = Ki_high;
+                Kd = Kd_high;
+            }
+            
+            // Proportional term
+            proportional_term = Kp * error_for_control;
+            
+            // Integral term with anti-windup
+            if (fabs(error) &gt; ERROR_DEADBAND) {
+                integral_error += (error * feedback_interval_s);
+                
+                // Anti-windup with clamping
+                if (integral_error &gt; MAX_INTEGRAL) integral_error = MAX_INTEGRAL;
+                if (integral_error &lt; -MAX_INTEGRAL) integral_error = -MAX_INTEGRAL;
+            } else {
+                // Slowly decay integral when in deadband to prevent buildup
+                integral_error *= 0.95;
+            }
+            integral_term = Ki * integral_error;
+            
+            // Derivative term with light filtering
+            double raw_derivative = (error - previous_error) / feedback_interval_s;
+            filtered_derivative = DERIVATIVE_FILTER_ALPHA * raw_derivative + 
+                                 (1.0 - DERIVATIVE_FILTER_ALPHA) * filtered_derivative;
+            derivative_term = Kd * filtered_derivative;
+            
+            // Calculate adjustment
+            adjustment = (int)(proportional_term + integral_term + derivative_term);
+            
+            // Rate limiting to prevent violent changes
+            if (adjustment &gt; 15) adjustment = 15;
+            if (adjustment &lt; -15) adjustment = -15;
+            
+            new_speed = current_speed + adjustment;
+            motor_set_speed(new_speed);
+            previous_error = error;
+            
+            // Debug output every 20 cycles (2 seconds)
+            static int debug_counter = 0;
+            if (++debug_counter &gt;= 20) {
+                printf("[PID] Target: %.1f, Actual: %.1f, Error: %.1f, P: %.2f, I: %.2f, D: %.2f, Adj: %d, Speed: %d\n",
+                       desired_rpm, rpm_snapshot, error, proportional_term, integral_term, derivative_term, adjustment, current_speed);
+                fflush(stdout);
+                debug_counter = 0;
+            }
+        }
+    }
+    return NULL;
+}
+
+// --- Command Handler ---
+void handle_command(char *command) {
+    if (strncmp(command, "START_STOP", 10) == 0) motor_toggle_power();
+    else if (strncmp(command, "SPEED_UP", 8) == 0) {
+        is_automatic_mode = 0;
+        reset_integral_flag = 1;
+        motor_set_speed(current_speed + 25);
+    }
+    else if (strncmp(command, "SPEED_DOWN", 10) == 0) {
+        is_automatic_mode = 0;
+        reset_integral_flag = 1;
+        motor_set_speed(current_speed - 25);
+    }
+    else if (strncmp(command, "DIR_CW", 6) == 0) motor_direction_cw();
+    else if (strncmp(command, "DIR_CCW", 7) == 0) motor_direction_ccw();
+    else if (strncmp(command, "MODE_AUTO", 9) == 0) {
+        is_automatic_mode = 1;
+        reset_integral_flag = 1;
+        printf("Mode set to AUTO\n"); fflush(stdout);
+    }
+    else if (strncmp(command, "MODE_MANUAL", 11) == 0) {
+        is_automatic_mode = 0;
+        reset_integral_flag = 1;
+        printf("Mode set to MANUAL\n"); fflush(stdout);
+    }
+    else if (strncmp(command, "SET_RPM:", 8) == 0) {
+        double rpm_from_app = 0.0;
+        if (sscanf(command + 8, "%lf", &rpm_from_app) == 1) {
+            desired_rpm = rpm_from_app;
+            is_automatic_mode = 1;
+            reset_integral_flag = 1;
+            printf("Desired RPM set to %.2f\n", desired_rpm);
+        } else {
+            printf("Failed to parse RPM command.\n");
+        }
+        fflush(stdout);
+    }
+}
+
+// --- Client Handling Threads ---
+typedef struct {
+    int client_socket;
+    int *is_connected;
+} client_thread_args_t;
+
+void* client_read_thread(void *args_ptr) {
+    client_thread_args_t *args = (client_thread_args_t*)args_ptr;
+    int client = args->client_socket;
+    char buf[1024] = { 0 };
+    int bytes_read;
+    while(1) {
+        bytes_read = read(client, buf, sizeof(buf));
+        if( bytes_read &lt;= 0 ) break;
+        buf[bytes_read] = '\0';
+        printf("Received: [%s]", buf);
+        fflush(stdout);
+        handle_command(buf);
+    }
+    printf("Client read thread exiting. Setting disconnect flag.\n");
+    fflush(stdout);
+    *(args-&gt;is_connected) = 0;
+    motor_quiet_state();
+    close(client);
+    printf("Client disconnected. Clearing paired devices...\n");
+    fflush(stdout);
+    system("/usr/local/bin/clear-bt-devices.sh");
+    printf("Ready for new connection.\n");
+    fflush(stdout);
+    free(args);
+    return NULL;
+}
+
+void* client_write_thread(void *args_ptr) {
+    client_thread_args_t *args = (client_thread_args_t*)args_ptr;
+    int client = args->client_socket;
+    char rpm_buf[32];
+    while(*(args-&gt;is_connected)) {
+        pthread_mutex_lock(&rpm_mutex);
+        double rpm = current_rpm;
+        pthread_mutex_unlock(&rpm_mutex);
+        snprintf(rpm_buf, sizeof(rpm_buf), "RPM:%.1f\n", rpm);
+        if (write(client, rpm_buf, strlen(rpm_buf)) &lt; 0) {
+            break;
+        }
+        sleep_ms(RPM_SEND_INTERVAL_MS);
+    }
+    printf("Client write thread exiting.\n");
+    fflush(stdout);
+    free(args);
+    return NULL;
+}
+
+// --- Main Server Function ---
+int main(int argc, char **argv)
+{
+    if (gpioInitialise() &lt; 0) {
+        fprintf(stderr, "pigpio initialization failed!\n");
+        return 1;
+    }
+
+    // Setup GPIO
+    gpioSetMode(MASTER_ENABLE_PIN, PI_OUTPUT);
+    gpioSetMode(DIR_A_PIN, PI_OUTPUT);
+    gpioSetMode(DIR_B_PIN, PI_OUTPUT);
+    gpioSetMode(RPM_SENSOR_PIN, PI_INPUT);
+    gpioSetPullUpDown(RPM_SENSOR_PIN, PI_PUD_UP);
+    gpioSetISRFunc(RPM_SENSOR_PIN, FALLING_EDGE, 0, rpm_callback);
+    motor_quiet_state();
+
+    // Start RPM calculator thread
+    pthread_t rpm_thread_id;
+    if (pthread_create(&rpm_thread_id, NULL, rpm_calculator_thread, NULL)) {
+        fprintf(stderr, "Failed to create RPM thread\n");
+        gpioTerminate();
+        return 1;
+    }
+    pthread_detach(rpm_thread_id);
+
+    // Start feedback controller thread
+    pthread_t feedback_thread_id;
+    if (pthread_create(&feedback_thread_id, NULL, feedback_controller_thread, NULL)) {
+        fprintf(stderr, "Failed to create feedback thread\n");
+        gpioTerminate();
+        return 1;
+    }
+    pthread_detach(feedback_thread_id);
+
+    // --- Bluetooth Setup ---
+    struct sockaddr_rc loc_addr = { 0 }, rem_addr = { 0 };
+    int s, client;
+    socklen_t opt = sizeof(rem_addr);
+    printf("Starting RPi4 Bluetooth server...\n");
+    fflush(stdout);
+    s = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
+    loc_addr.rc_family = AF_BLUETOOTH;
+    loc_addr.rc_bdaddr = *BDADDR_ANY;
+    loc_addr.rc_channel = (uint8_t) 1;
+    if (bind(s, (struct sockaddr *)&loc_addr, sizeof(loc_addr)) &lt; 0) {
+        perror("Failed to bind socket");
+        gpioTerminate();
+        return 1;
+    }
+    listen(s, 1);
+    printf("Waiting for connection on RFCOMM channel 1...\n");
+    fflush(stdout);
+
+    // --- Main Accept Loop ---
+    while(1) {
+        client = accept(s, (struct sockaddr *)&rem_addr, &opt);
+        if (client &lt; 0) {
+            perror("Failed to accept connection");
+            continue;
+        }
+        char buf[32];
+        ba2str( &rem_addr.rc_bdaddr, buf );
+        fprintf(stdout, "Accepted connection from %s\n", buf);
+        fflush(stdout);
+        
+        // Create client threads
+        client_thread_args_t *read_args = malloc(sizeof(client_thread_args_t));
+        client_thread_args_t *write_args = malloc(sizeof(client_thread_args_t));
+        int *is_connected_flag = malloc(sizeof(int));
+        *is_connected_flag = 1;
+        read_args-&gt;client_socket = client;
+        read_args-&gt;is_connected = is_connected_flag;
+        write_args-&gt;client_socket = client;
+        write_args-&gt;is_connected = is_connected_flag;
+        
+        pthread_t read_tid, write_tid;
+        if (pthread_create(&read_tid, NULL, client_read_thread, (void*)read_args)) {
+            perror("Failed to create read thread");
+            close(client);
+        } else {
+            pthread_detach(read_tid);
+        }
+        if (pthread_create(&write_tid, NULL, client_write_thread, (void*)write_args)) {
+            perror("Failed to create write thread");
+            close(client);
+        } else {
+            pthread_detach(write_tid);
+        }
+    }
+
+    // Cleanup
+    close(s);
+    motor_quiet_state();
+    gpioTerminate();
+    return 0;
+}
+                        </code></pre>
+                    </div>
+                </details>
+            </div>
+        </section>
+    </main>
+
+    <footer class="text-center py-8 border-t border-stone-200">
+        <p class="text-stone-500">ECSE 4235 Final Project - Group 5: Liam Dabelstein & Jake VanEssendelft</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Hardware Toggle Logic ---
+            const hwToggle = document.getElementById('hardwareToggle');
+            const hwFlawed = document.getElementById('hw-flawed');
+            const hwFixed = document.getElementById('hw-fixed');
+
+            hwToggle.addEventListener('click', () => {
+                if (hwFixed.classList.contains('hidden')) {
+                    hwFlawed.classList.add('hidden');
+                    hwFixed.classList.remove('hidden');
+                    hwToggle.textContent = 'Show Flawed CP1 Design';
+                } else {
+                    hwFlawed.classList.remove('hidden');
+                    hwFixed.classList.add('hidden');
+                    hwToggle.textContent = 'Show Final Circuit (CP2 Fix)';
+                }
+            });
+
+            // --- PID Chart Logic ---
+            const ctx = document.getElementById('pidChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+                    datasets: [
+                        {
+                            label: 'Target RPM',
+                            data: [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000],
+                            borderColor: '#0369a1', // sky-700
+                            borderDash: [5, 5],
+                            fill: false,
+                            pointRadius: 0,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'P-Only (Oscillation)',
+                            data: [0, 3000, 6000, 4000, 5500, 4500, 5200, 4800, 5100, 4900, 5050],
+                            borderColor: '#ef4444', // red-500
+                            fill: false,
+                            pointRadius: 0,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'PI (Steady-State Error)',
+                            data: [0, 2000, 3500, 4200, 4500, 4600, 4700, 4750, 4780, 4800, 4800],
+                            borderColor: '#f59e0b', // amber-500
+                            fill: false,
+                            pointRadius: 0,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Final PID (Stable & Accurate)',
+                            data: [0, 2500, 4500, 5200, 5050, 4950, 5000, 5000, 5000, 5000, 5000],
+                            borderColor: '#16a34a', // green-600
+                            fill: false,
+                            pointRadius: 0,
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'RPM'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time (seconds)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Conceptual PID Controller Tuning'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
