@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PARMCO Project - Hardware</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fdfcfb; color: #292524; }
+        html { scroll-behavior: smooth; }
+        .sticky-nav { position: sticky; top: 0; z-index: 50; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); background-color: rgba(253, 252, 251, 0.8); }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header & Navigation -->
+    <header class="sticky-nav border-b border-stone-200">
+        <nav class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex-shrink-0">
+                    <span class="text-xl font-bold text-sky-700">PARMCO Project</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="index.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Overview</a>
+                        <a href="hardware.html" class="text-sky-700 font-bold px-3 py-2 rounded-md text-sm">Hardware</a>
+                        <a href="server.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Server</a>
+                        <a href="app.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">App</a>
+                        <a href="controller.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Controller</a>
+                        <a href="documentation.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Documents</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- Hardware Section -->
+        <section id="hardware" class="py-16">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold mb-4">Hardware Evolution</h2>
+                <p class="text-lg text-stone-600 max-w-3xl mx-auto">The initial CP1 circuit design was flawed. A critical "Tug of War" was discovered during physical testing, which required a complete redesign of the master power switch.</p>
+                <button id="hardwareToggle" class="mt-6 px-6 py-2 bg-sky-700 text-white font-semibold rounded-lg shadow-md hover:bg-sky-800 transition-colors">Show Final Circuit (CP2 Fix)</button>
+            </div>
+
+            <div id="hardwareContent" class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <!-- Flawed Design -->
+                <div id="hw-flawed">
+                    <h3 class="text-2xl font-semibold text-red-600">Flawed CP1 Design: The "Tug of War"</h3>
+                    <p class="mt-4 text-stone-700">The initial design used an optocoupler for isolation. This failed because the RP4's weak 3.3V GPIO pin (~2.5mA) could not power the optocoupler's LED enough to overcome the 4.7kΩ pull-up resistor (pulling with 2.55mA). The optocoupler lost the "tug of war," and the MOSFET was stuck permanently ON.</p>
+                    <ul class="mt-4 space-y-2 list-disc list-inside">
+                        <li><span class="font-semibold">Flaw:</span> RP4 GPIO cannot source enough current.</li>
+                        <li><span class="font-semibold">Symptom:</span> Optocoupler pull-down (0.3mA) was weaker than the resistor's pull-up (2.55mA).</li>
+                        <li><span class="font-semibold">Result:</span> Motor was stuck ON, `START_STOP` command failed.</li>
+                    </ul>
+                </div>
+                <!-- Fixed Design -->
+                <div id="hw-fixed" class="hidden">
+                    <h3 class="text-2xl font-semibold text-green-600">Final CP2 Design: NPN Transistor Buffer</h3>
+                    <p class="mt-4 text-stone-700">The optocoupler was removed entirely. It was replaced with a simple NPN transistor buffer. The RP4's GPIO now sends a low-current *signal* to the transistor, which then does the "heavy lifting" of sinking the 2.55mA from the pull-up resistor. This reliably pulls the MOSFET gate LOW and turns the motor OFF.</p>
+                    <ul class="mt-4 space-y-2 list-disc list-inside">
+                        <li><span class="font-semibold">Fix:</span> Use GPIO as a signal, not a power source.</li>
+                        <li><span class="font-semibold">Component:</span> A 2N3904 NPN Transistor acts as the switch.</li>
+                        <li><span class="font-semibold">Result:</span> A simple, reliable circuit that sacrifices isolation for functionality.</li>
+                    </ul>
+                </div>
+
+                <!-- Image: Replaced with your final circuit diagram -->
+                <div class="flex items-center justify-center p-8 bg-white rounded-lg shadow-inner">
+                    <img src="circuit_diagram.png" alt="Final Circuit Diagram" class="rounded-lg w-full h-auto" onerror="this.src='https://placehold.co/600x400/e0e0e0/757575?text=circuit_diagram.png%0ANot+Found'">
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="text-center py-8 border-t border-stone-200">
+        <p class="text-stone-500">ECSE 4235 Final Project - Group 5: Liam Dabelstein & Jake VanEssendelft</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Hardware Toggle Logic ---
+            const hwToggle = document.getElementById('hardwareToggle');
+            const hwFlawed = document.getElementById('hw-flawed');
+            const hwFixed = document.getElementById('hw-fixed');
+
+            hwToggle.addEventListener('click', () => {
+                if (hwFixed.classList.contains('hidden')) {
+                    hwFlawed.classList.add('hidden');
+                    hwFixed.classList.remove('hidden');
+                    hwToggle.textContent = 'Show Flawed CP1 Design';
+                } else {
+                    hwFlawed.classList.remove('hidden');
+                    hwFixed.classList.add('hidden');
+                    hwToggle.textContent = 'Show Final Circuit (CP2 Fix)';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
