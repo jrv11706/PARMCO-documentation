@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PARMCO Project - Group 5</title>
+    <title>PARMCO Project - Home</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <!-- 
       Chosen Palette: Calm Neutral
@@ -16,38 +15,21 @@
     -->
     <!-- 
       Application Structure Plan: 
-      A single-page, vertical-scrolling SPA. The structure is thematic and chronological, following the project's development journey. 
-      A sticky header allows users to jump to any section. This is more intuitive than mirroring the report's file structure.
-      Sections:
-      1. Hero: Title and summary.
-      2. Architecture: High-level overview of the four main components.
-      3. Hardware Evolution: Interactive toggle showing the critical CP1 hardware flaw and the CP2 fix.
-      4. Headless Server: Details the 3-part software solution for the RPi4's headless operation.
-      5. Control System: Explains the PID controller with a conceptual Chart.js graph to visualize P, PI, and PID concepts.
-      6. Final Code: Toggleable code blocks for the final C server and Android app.
-      7. Project Documents: Collapsible sections to read the original AI-generated summaries.
-      This flow was chosen to tell a compelling story of problem-solving and iteration, which is the core of the project.
+      A multi-page HTML site. Each major section is a separate file.
+      - index.html: Home/Overview
+      - hardware.html: Hardware Evolution
+      - server.html: RPi4 Server & Headless setup
+      - app.html: Android App details
+      - controller.html: PID Controller logic
+      - documentation.html: AI-generated summaries
+      This is more organized and editable for the user.
     -->
     <!-- 
       Visualization & Content Choices:
-      1. Report Info: Hardware Flaw (CP1 Optocoupler vs. CP2 NPN Transistor).
-         - Goal: Compare, Explain.
-         - Viz: Two-column HTML layout with a toggle.
-         - Interaction: JavaScript-powered button to toggle between "Flawed Design" and "Final Design".
-         - Justification: Clearly visualizes the "Tug of War" problem and its solution, which was a critical project milestone.
-         - Library/Method: Vanilla JS, HTML/Tailwind.
-      2. Report Info: PID Controller Tuning (P vs. PI vs. PID).
-         - Goal: Explain, Inform.
-         - Viz: Line chart.
-         - Interaction: None (static chart).
-         - Justification: Visually explains the complex control theory concepts (overshoot, steady-state error, stability) that were central to the CP3 tuning process.
-         - Library/Method: Chart.js (Canvas).
-      3. Report Info: Final Code Files (server.c, MainActivity.kt, etc.).
-         - Goal: Inform, Organize.
-         - Viz: HTML `<pre>` blocks inside collapsible `<details>` tags.
-         - Interaction: User click to expand/collapse.
-         - Justification: Makes the final code accessible without cluttering the main page, supporting the project's documentation requirement.
-         - Library/Method: HTML.
+      Interactions are now split across pages.
+      - hardware.html: Contains the JS toggle for the "Tug of War" diagram.
+      - controller.html: Contains the Chart.js PID visualization.
+      - documentation.html: Contains the collapsible <details> tags.
     -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
@@ -107,6 +89,19 @@
             border-bottom-left-radius: 0.5rem;
             border-bottom-right-radius: 0.5rem;
         }
+        .doc-content h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .doc-content p, .doc-content li {
+            color: #57534e; /* text-stone-600 */
+            margin-bottom: 0.75rem;
+        }
+        .doc-content ul, .doc-content ol {
+            padding-left: 1.5rem;
+            list-style: disc;
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -120,13 +115,12 @@
                 </div>
                 <div class="hidden md:block">
                     <div class="ml-10 flex items-baseline space-x-4">
-                        <a href="#overview" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Overview</a>
-                        <a href="#hardware" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Hardware</a>
-                        <a href="#server" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Server</a>
-                        <a href="#app" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">App</a>
-                        <a href="#controller" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Controller</a>
-                        <a href="#code" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Code</a>
-                        <a href="#docs" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Documents</a>
+                        <a href="index.html" class="text-sky-700 font-bold px-3 py-2 rounded-md text-sm">Overview</a>
+                        <a href="hardware.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Hardware</a>
+                        <a href="server.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Server</a>
+                        <a href="app.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">App</a>
+                        <a href="controller.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Controller</a>
+                        <a href="documentation.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Documents</a>
                     </div>
                 </div>
             </div>
@@ -143,11 +137,43 @@
             </h1>
             <p class="mt-6 text-xl text-stone-600">
                 A standalone embedded system for manual and automatic PID control of a DC motor,
-                developed by **Group 5 (Liam Dabelstein & Jake VanEssendelft)** for ECSE 4235.
+                developed by <b>Group 5 (Liam Dabelstein & Jake VanEssendelft)</b> for ECSE 4235.
             </p>
             <p class="mt-4 text-lg text-stone-500">
                 This project was created entirely in collaboration with AI, from circuit design to the final PID controller tuning.
             </p>
+        </section>
+
+        <!-- Project Requirements Section -->
+        <section id="requirements" class="py-16 bg-stone-100 rounded-lg">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold mb-4">Project Requirements</h2>
+                <p class="text-lg text-stone-600 max-w-3xl mx-auto">These are the minimum goals extracted from the original project document that guided our design.</p>
+            </div>
+            <div class="mt-12 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="text-xl font-semibold text-sky-700">Android App</h3>
+                    <ul class="mt-4 space-y-2 list-disc list-outside pl-5 text-stone-600">
+                        <li>Control motor Stop/Start</li>
+                        <li>Control motor direction (CW/CCW)</li>
+                        <li>Control manual speed (Faster/Slower)</li>
+                        <li>Selector for Manual/Automatic modes</li>
+                        <li>Input for "Desired RPM"</li>
+                        <li>Display for "Actual RPM"</li>
+                        <li>Handle Bluetooth connection and re-connection ("forget" test)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold text-sky-700">Raspberry Pi 4 Server</h3>
+                    <ul class="mt-4 space-y-2 list-disc list-outside pl-5 text-stone-600">
+                        <li>Must be "standalone" (no interaction except power-on)</li>
+                        <li>Must boot and run the C code automatically</li>
+                        <li>Must start in a "quiet" state (motor off)</li>
+                        <li>Must provide RPM information back to the app</li>
+                        <li>Code must be written in C or Assembly</li>
+                    </ul>
+                </div>
+            </div>
         </section>
 
         <!-- Architecture Section -->
@@ -157,7 +183,6 @@
                 <!-- Card 1 -->
                 <div class="bg-white p-6 rounded-lg shadow-lg border border-stone-100">
                     <div class="flex items-center justify-center h-12 w-12 rounded-full bg-sky-100 text-sky-700">
-                        <!-- Icon Placeholder -->
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
                     </div>
                     <h3 class="mt-5 text-xl font-semibold">Android Application</h3>
@@ -189,373 +214,11 @@
                 </div>
             </div>
         </section>
-
-        <!-- Hardware Section -->
-        <section id="hardware" class="py-16 bg-stone-100 rounded-lg">
-            <div class="text-center">
-                <h2 class="text-3xl font-bold mb-4">Hardware Evolution</h2>
-                <p class="text-lg text-stone-600 max-w-3xl mx-auto">The initial CP1 circuit design was flawed. A critical "Tug of War" was discovered during physical testing, which required a complete redesign of the master power switch.</p>
-                <button id="hardwareToggle" class="mt-6 px-6 py-2 bg-sky-700 text-white font-semibold rounded-lg shadow-md hover:bg-sky-800 transition-colors">Show Final Circuit (CP2 Fix)</button>
-            </div>
-
-            <div id="hardwareContent" class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                <!-- Flawed Design -->
-                <div id="hw-flawed">
-                    <h3 class="text-2xl font-semibold text-red-600">Flawed CP1 Design: The "Tug of War"</h3>
-                    <p class="mt-4 text-stone-700">The initial design used an optocoupler for isolation. This failed because the RP4's weak 3.3V GPIO pin (~2.5mA) could not power the optocoupler's LED enough to overcome the 4.7kΩ pull-up resistor (pulling with 2.55mA). The optocoupler lost the "tug of war," and the MOSFET was stuck permanently ON.</p>
-                    <ul class="mt-4 space-y-2 list-disc list-inside">
-                        <li><span class="font-semibold">Flaw:</span> RP4 GPIO cannot source enough current.</li>
-                        <li><span class="font-semibold">Symptom:</span> Optocoupler pull-down (0.3mA) was weaker than the resistor's pull-up (2.55mA).</li>
-                        <li><span class="font-semibold">Result:</span> Motor was stuck ON, `START_STOP` command failed.</li>
-                    </ul>
-                </div>
-                <!-- Fixed Design -->
-                <div id="hw-fixed" class="hidden">
-                    <h3 class="text-2xl font-semibold text-green-600">Final CP2 Design: NPN Transistor Buffer</h3>
-                    <p class="mt-4 text-stone-700">The optocoupler was removed entirely. It was replaced with a simple NPN transistor buffer. The RP4's GPIO now sends a low-current *signal* to the transistor, which then does the "heavy lifting" of sinking the 2.55mA from the pull-up resistor. This reliably pulls the MOSFET gate LOW and turns the motor OFF.</p>
-                    <ul class="mt-4 space-y-2 list-disc list-inside">
-                        <li><span class="font-semibold">Fix:</span> Use GPIO as a signal, not a power source.</li>
-                        <li><span class="font-semibold">Component:</span> A 2N3904 NPN Transistor acts as the switch.</li>
-                        <li><span class="font-semibold">Result:</span> A simple, reliable circuit that sacrifices isolation for functionality.</li>
-                    </ul>
-                </div>
-
-                <!-- Image Placeholder -->
-                <div class="flex items-center justify-center p-8 bg-white rounded-lg shadow-inner">
-                    <img src="https://placehold.co/600x400/e0e7ff/334155?text=Final+Circuit+Diagram+(image_10d46c.png)" alt="Final Circuit Diagram" class="rounded-lg">
-                </div>
-            </div>
-        </section>
-
-        <!-- RPi4 Server Section -->
-        <section id="server" class="py-16">
-            <h2 class="text-3xl font-bold text-center mb-12">The Headless Raspberry Pi Server</h2>
-            <p class="text-center text-lg text-stone-600 max-w-3xl mx-auto mb-12">A major project requirement was that the RPi4 must be "headless," requiring no user interaction. This was achieved with a 3-part software system to automate Bluetooth pairing.</p>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Card 1 -->
-                <div class="bg-white p-6 rounded-lg shadow-lg border border-stone-100">
-                    <h3 class="text-xl font-semibold">1. Auto-Pairing Agent</h3>
-                    <p class="mt-2 text-stone-600">A custom `systemd` service (`bt-agent.service`) runs `bt-agent -c NoInputNoOutput` on boot. This forces the Pi to automatically accept all pairing requests with no PIN or pop-up.</p>
-                </div>
-                <!-- Card 2 -->
-                <div class="bg-white p-6 rounded-lg shadow-lg border border-stone-100">
-                    <h3 class="text-xl font-semibold">2. "Stale Key" Fix Script</h3>
-                    <p class="mt-2 text-stone-600">A bash script (`clear-bt-devices.sh`) lists all paired devices and removes them one by one. This solves the "stale key" bug that prevented re-pairing.</p>
-                </div>
-                <!-- Card 3 -->
-                <div class="bg-white p-6 rounded-lg shadow-lg border border-stone-100">
-                    <h3 class="text-xl font-semibold">3. Main Server (`parmco.service`)</h3>
-                    <p class="mt-2 text-stone-600">The main C server is run by its own service, which first executes the `clear-bt-devices.sh` script on boot. The C server *also* calls this script on every disconnect, ensuring the Pi is always ready for a fresh connection.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- App Section -->
-        <section id="app" class="py-16 bg-stone-100 rounded-lg">
-            <h2 class="text-3xl font-bold text-center mb-12">The Android Application</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                <div class="flex items-center justify-center p-8 bg-white rounded-lg shadow-inner">
-                    <img src="https://placehold.co/400x600/e0e7ff/334155?text=Final+App+Screenshot+(image_5da479.png)" alt="Final App UI" class="rounded-lg shadow-lg">
-                </div>
-                <div>
-                    <h3 class="text-2xl font-semibold">Key Features (Kotlin)</h3>
-                    <p class="mt-4 text-stone-700">The app, written in Kotlin, handles all user interaction and data communication.</p>
-                    <ul class="mt-6 space-y-4">
-                        <li class="flex items-start">
-                            <div class="flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full bg-sky-700 text-white font-bold text-sm">1</div>
-                            <p class="ml-4 text-stone-600"><strong class="text-stone-800">Stateful UI:</strong> The "START" button toggles to "STOP", and "Auto" mode disables the manual speed buttons, preventing user error.</p>
-                        </li>
-                        <li class="flex items-start">
-                            <div class="flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full bg-sky-700 text-white font-bold text-sm">2</div>
-                            <p class="ml-4 text-stone-600"><strong class="text-stone-800">Two-Way Data:</strong> A `sendCommand()` function sends string commands (e.g., `DIR_CW\n`), while a `startReadThread()` listens for and parses incoming RPM data (`RPM:5000.0\n`).</p>
-                        </li>
-                        <li class="flex items-start">
-                            <div class="flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full bg-sky-700 text-white font-bold text-sm">3</div>
-                            <p class="ml-4 text-stone-600"><strong class="text-stone-800">Robust Connection:</strong> Includes a "Disconnect" button and an automatic-disconnect handler (in the read thread) that fully resets the UI to its initial state.</p>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </section>
-
-        <!-- Controller Section -->
-        <section id="controller" class="py-16">
-            <h2 class="text-3xl font-bold text-center mb-12">Advanced PID Control System</h2>
-            <p class="text-center text-lg text-stone-600 max-w-3xl mx-auto mb-12">The "Automatic" mode is run by a sophisticated, multithreaded PID controller in `server.c`. Tuning this controller to be fast, stable, and accurate was the final challenge.</p>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                <div>
-                    <h3 class="text-2xl font-semibold">From P to PID</h3>
-                    <p class="mt-4 text-stone-700">A simple Proportional (P) controller was unstable and oscillated. A Proportional-Integral (PI) controller fixed the oscillation but had a large **steady-state error** (settling 20% below the target). The final PID controller solves these issues.</p>
-                    <ul class="mt-6 space-y-4 list-disc list-outside pl-5">
-                        <li class="text-stone-600"><strong class="text-stone-800">Complementary Filter:</strong> Sensor noise is filtered using a complementary filter (`alpha = 0.85`) that provides a fast, smooth RPM reading with minimal lag.</li>
-                        <li class="text-stone-600"><strong class="text-stone-800">Gain Scheduling:</strong> The controller uses two different sets of `Kp`, `Ki`, and `Kd` gains—one for low RPMs (<4000) and one for high RPMs (>=4000).</li>
-                        <li class="text-stone-600"><strong class="text-stone-800">Error Deadband:</strong> To stop "hunting," the controller ignores small errors (< 100 RPM), allowing the speed to settle perfectly.</li>
-                        <li class="text-stone-600"><strong class="text-stone-800">Integral Reset:</strong> The `integral_error` is reset to 0 on any new command, preventing "integral wind-up" and ensuring a fast response.</li>
-                    </ul>
-                </div>
-                <div class="chart-container">
-                    <canvas id="pidChart"></canvas>
-                </div>
-            </div>
-        </section>
-
-        <!-- Code & Docs Section -->
-        <section id="code" class="py-16 bg-stone-100 rounded-lg">
-            <h2 class="text-3xl font-bold text-center mb-12">Final Code & Project Documents</h2>
-
-            <!-- Code Blocks -->
-            <div class="space-y-4">
-                <details>
-                    <summary>Show `server.c` (RPi4 Final Code)</summary>
-                    <div class="code-block">
-                        <pre><code>
-// This is the final, tuned C code from server.c
-// It includes all 5 threads: main, read, write, rpm_calc, and pid_controller
-// ... (Full server.c code would be here) ...
-
-#include &lt;stdio.h&gt;
-#include &lt;unistd.h&gt;
-#include &lt;string.h&gt;
-#include &lt;stdlib.h&gt;
-#include &lt;sys/socket.h&gt;
-#include &lt;bluetooth/bluetooth.h&gt;
-#include &lt;bluetooth/rfcomm.h&gt;
-#include &lt;pigpio.h&gt;
-#include &lt;pthread.h&gt;
-#include &lt;time.h&gt;
-#include &lt;math.h&gt;
-
-// --- Pin Definitions (BCM) ---
-#define MASTER_ENABLE_PIN 17
-#define PWM_PIN 18
-// ... (Code from server.c) ...
-void rpm_callback(int gpio, int level, uint32_t tick);
-
-// ... (Code from server.c) ...
-void* rpm_calculator_thread(void *arg) {
-    // ... (Complementary filter logic) ...
-}
-
-// ... (Code from server.c) ...
-void* feedback_controller_thread(void *arg) {
-    // ... (PID logic with Gain Scheduling) ...
-}
-
-// ... (Code from server.c) ...
-void handle_command(char *command) {
-    // ... (Parsing logic for START_STOP, SET_RPM, etc.) ...
-}
-
-// ... (Code from server.c) ...
-int main(int argc, char **argv)
-{
-    // ... (pigpio init) ...
-    // ... (Start all threads) ...
-    // ... (Bluetooth server accept loop) ...
-    // ... (Cleanup) ...
-}
-                        </code></pre>
-                    </div>
-                </details>
-
-                <details>
-                    <summary>Show `MainActivity.kt` (Android App Final Code)</summary>
-                    <div class="code-block">
-                        <pre><code>
-// This is the final Kotlin code for the Android app
-// It includes all UI listeners and the Bluetooth send/receive threads
-package com.group5.parmco
-
-import android.Manifest
-// ... (Full MainActivity.kt code would be here) ...
-
-class MainActivity : AppCompatActivity() {
-
-    // ... (UI variable declarations) ...
-    // ... (Bluetooth variable declarations) ...
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        // ... (findViewById and listener setup) ...
-        
-        buttonSetRpm.setOnClickListener {
-            val rpmString = editDesiredRpm.text.toString()
-            if (rpmString.isNotEmpty()) {
-                sendCommand("SET_RPM:$rpmString")
-                textDesiredRpm.text = rpmString
-                if (!switchMode.isChecked) {
-                    switchMode.isChecked = true
-                }
-            }
-        }
-    }
-    
-    private fun sendCommand(command: String) {
-        // ... (outputStream.write logic) ...
-    }
-    
-    private fun startReadThread() {
-        // ... (inputStream.bufferedReader logic to parse "RPM:") ...
-    }
-    
-    private fun connectToDevice() {
-        // ... (Reflection hack to connect to channel 1) ...
-        // ... (Starts readThread) ...
-        // ... (Updates UI to show controls) ...
-    }
-    
-    private fun disconnect() {
-        // ... (Closes sockets and resets UI) ...
-    }
-}
-                        </code></pre>
-                    </div>
-                </details>
-            </div>
-
-            <!-- Documents -->
-            <section id="docs" class="mt-16">
-                <h3 class="text-2xl font-bold text-center mb-8">AI-Generated Project Summaries</h3>
-                <div class="space-y-4">
-                    <details>
-                        <summary>Checkpoint 1: AI-Generated Documentation</summary>
-                        <div class="doc-content prose">
-                            <p><strong>Project Context:</strong> Designing a motor driver circuit to enable a Raspberry Pi 4 to control a 12V DC motor with bidirectional rotation.</p>
-                            <p><strong>Critical Design Flaw Identified:</strong> A preliminary design using a single MOSFET was incapable of reversing the motor's direction.</p>
-                            <p><strong>Final CP1 Solution:</strong> A final architecture was chosen based on the **SN754410 H-Bridge Driver IC**. The project's MOSFET (IRFZ34) requirement was met by using it as an isolated **master power switch** for the H-bridge's 12V supply.</p>
-                        </div>
-                    </details>
-                    <details>
-                        <summary>Checkpoint 2: AI-Generated Documentation</summary>
-                        <div class="doc-content prose">
-                            <p><strong>Hardware Flaw Discovered:</strong> The CP1 circuit design failed physical testing. A "Tug of War" was discovered: the RP4's weak GPIO pin (~2.5mA) could not drive the 4N25 optocoupler's LED with enough current to overcome the 4.7kΩ pull-up resistor (2.55mA). The motor was stuck ON.</p>
-                            <p><strong>Hardware Fix:</strong> The optocoupler was **removed entirely** and replaced with a simple NPN Transistor Buffer (2N3904).</p>
-                            <p><strong>Headless Pairing Solution:</strong> A 3-part system was implemented:
-                                <ol>
-                                    <li>`bt-agent.service` to auto-accept pairings.</li>
-                                    <li>`clear-bt-devices.sh` script to remove stale keys.</li>
-                                    <li>`parmco-server.service` to run the script on boot and `server.c` to run it on disconnect.</li>
-                                </ol>
-                            </p>
-                        </div>
-                    </details>
-                    <details>
-                        <summary>Checkpoint 3: AI-Generated Documentation</summary>
-                        <div class="doc-content prose">
-                            <p><strong>Project Context:</strong> This phase integrated all components into the final system, including the "Automatic" PID feedback mode.</p>
-                            <p><strong>Two-Way Data:</strong> The `server.c` file was upgraded to be multithreaded. A `client_write_thread` sends `RPM:....\n` data, and `MainActivity.kt` was updated with a `startReadThread` to parse this data and update the UI.</p>
-                            <p><strong>Closed-Loop Controller (PID Tuning):</strong> The final controller was built iteratively:
-                                <ul>
-                                    <li>V1 (P-Only): Unstable and oscillated.</li>
-                                    <li>V2 (PI-Only): Stable but had a large steady-state error.</li>
-                                    <li>V3 (Advanced User Code): The user provided new `server.c` code with a **Complementary Filter**, **Gain Scheduling**, and an **Error Deadband**.</li>
-                                    <li>V4 (Final Tuning): The final iterations focused on tuning the advanced PID controller to fix the remaining steady-state error by adjusting `Kp`, `Ki`, and `Kd` values.</li>
-                                </ul>
-                            </p>
-                        </div>
-                    </details>
-                </div>
-            </section>
-
-        </section>
-
     </main>
 
     <footer class="text-center py-8 border-t border-stone-200">
         <p class="text-stone-500">ECSE 4235 Final Project - Group 5: Liam Dabelstein & Jake VanEssendelft</p>
     </footer>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- Hardware Toggle Logic ---
-            const hwToggle = document.getElementById('hardwareToggle');
-            const hwFlawed = document.getElementById('hw-flawed');
-            const hwFixed = document.getElementById('hw-fixed');
-
-            hwToggle.addEventListener('click', () => {
-                if (hwFixed.classList.contains('hidden')) {
-                    hwFlawed.classList.add('hidden');
-                    hwFixed.classList.remove('hidden');
-                    hwToggle.textContent = 'Show Flawed CP1 Design';
-                } else {
-                    hwFlawed.classList.remove('hidden');
-                    hwFixed.classList.add('hidden');
-                    hwToggle.textContent = 'Show Final Circuit (CP2 Fix)';
-                }
-            });
-
-            // --- PID Chart Logic ---
-            const ctx = document.getElementById('pidChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
-                    datasets: [
-                        {
-                            label: 'Target RPM',
-                            data: [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000],
-                            borderColor: '#0369a1', // sky-700
-                            borderDash: [5, 5],
-                            fill: false,
-                            pointRadius: 0,
-                            tension: 0.1
-                        },
-                        {
-                            label: 'P-Only (Oscillation)',
-                            data: [0, 3000, 6000, 4000, 5500, 4500, 5200, 4800, 5100, 4900, 5050],
-                            borderColor: '#ef4444', // red-500
-                            fill: false,
-                            pointRadius: 0,
-                            tension: 0.1
-                        },
-                        {
-                            label: 'PI (Steady-State Error)',
-                            data: [0, 2000, 3500, 4200, 4500, 4600, 4700, 4750, 4780, 4800, 4800],
-                            borderColor: '#f59e0b', // amber-500
-                            fill: false,
-                            pointRadius: 0,
-                            tension: 0.1
-                        },
-                        {
-                            label: 'Final PID (Stable & Accurate)',
-                            data: [0, 2500, 4500, 5200, 5050, 4950, 5000, 5000, 5000, 5000, 5000],
-                            borderColor: '#16a34a', // green-600
-                            fill: false,
-                            pointRadius: 0,
-                            tension: 0.1
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'RPM'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Time (seconds)'
-                            }
-                        }
-                    },
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Conceptual PID Controller Tuning'
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false
-                        }
-                    }
-                }
-            });
-        });
-    </script>
 </body>
 </html>
