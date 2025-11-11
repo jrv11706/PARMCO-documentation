@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PARMCO Project - App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fdfcfb; color: #292524; }
+        html { scroll-behavior: smooth; }
+        .sticky-nav { position: sticky; top: 0; z-index: 50; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); background-color: rgba(253, 252, 251, 0.8); }
+        .code-block { background-color: #1c1917; color: #e7e5e4; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; font-family: monospace; font-size: 0.875rem; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header & Navigation -->
+    <header class="sticky-nav border-b border-stone-200">
+        <nav class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex-shrink-0">
+                    <span class="text-xl font-bold text-sky-700">PARMCO Project</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="index.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Overview</a>
+                        <a href="hardware.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Hardware</a>
+                        <a href="server.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Server</a>
+                        <a href="app.html" class="text-sky-700 font-bold px-3 py-2 rounded-md text-sm">App</a>
+                        <a href="controller.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Controller</a>
+                        <a href="documentation.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Documents</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- App Section -->
+        <section id="app" class="py-16">
+            <h2 class="text-3xl font-bold text-center mb-12">The Android Application</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <div class="flex items-center justify-center p-8 bg-white rounded-lg shadow-inner">
+                    <img src="app_screenshot.png" alt="Final App UI" class="rounded-lg shadow-lg" onerror="this.src='https://placehold.co/400x800/e0e0e0/757575?text=app_screenshot.png%0ANot+Found'">
+                </div>
+                <div>
+                    <h3 class="text-2xl font-semibold">Key Features (Kotlin)</h3>
+                    <p class="mt-4 text-stone-700">The app, written in Kotlin, handles all user interaction and data communication.</p>
+                    <ul class="mt-6 space-y-4">
+                        <li class="flex items-start">
+                            <div class="flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full bg-sky-700 text-white font-bold text-sm">1</div>
+                            <p class="ml-4 text-stone-600"><strong class="text-stone-800">Stateful UI:</strong> The "START" button toggles to "STOP", and "Auto" mode disables the manual speed buttons, preventing user error.</p>
+                        </li>
+                        <li class="flex items-start">
+                            <div class="flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full bg-sky-700 text-white font-bold text-sm">2</div>
+                            <p class="ml-4 text-stone-600"><strong class="text-stone-800">Two-Way Data:</strong> A `sendCommand()` function sends string commands (e.g., `DIR_CW\n`), while a `startReadThread()` listens for and parses incoming RPM data (`RPM:5000.0\n`).</p>
+                        </li>
+                        <li class="flex items-start">
+                            <div class="flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full bg-sky-700 text-white font-bold text-sm">3</div>
+                            <p class="ml-4 text-stone-600"><strong class="text-stone-800">Robust Connection:</strong> Includes a "Disconnect" button and an automatic-disconnect handler (in the read thread) that fully resets the UI to its initial state.</p>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- App Code -->
+        <section id="code" class="py-16 bg-stone-100 rounded-lg">
+            <h2 class="text-3xl font-bold text-center mb-12">App Code</h2>
+            <div class="space-y-4">
+                <details>
+                    <summary>Show `MainActivity.kt` (Android App Final Code)</summary>
+                    <div class="code-block">
+                        <pre><code>
+package com.group5.parmco
+
+import android.Manifest
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothSocket
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Bundle
+import android.util.Log
+import android.view.View
+import android.widget.Button
+import android.widget.EditText
+import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import com.google.android.material.switchmaterial.SwitchMaterial
+import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
+import java.util.UUID
+
+@SuppressLint("MissingPermission")
+class MainActivity : AppCompatActivity() {
+
+    private val tag = "MainActivity"
+
+    companion object {
+        private const val RPI_DEVICE_NAME = "group5pi"
+        private const val SPP_UUID_STRING = "00001101-0000-1000-8000-00805F9B34FB"
+    }
+
+    // --- UI Elements ---
+    private lateinit var statusIndicator: View
+    private lateinit var statusText: TextView
+    private lateinit var connectButton: Button
+    private lateinit var connectGroup: View
+
+    // Motor Control UI
+    private lateinit var controlsGroup: View
+    private lateinit var buttonStartStop: Button
+    private lateinit var buttonSpeedDown: Button
+    private lateinit var buttonSpeedUp: Button
+    private lateinit var switchDirection: SwitchMaterial
+    private lateinit var switchMode: SwitchMaterial
+    private lateinit var textActualRpm: TextView
+    private lateinit var buttonDisconnect: Button
+    private lateinit var editDesiredRpm: EditText
+    private lateinit var buttonSetRpm: Button
+    private lateinit var textDesiredRpm: TextView
+
+    // --- Bluetooth ---
+    private var bluetoothAdapter: BluetoothAdapter? = null
+    @Volatile private var parmcoSocket: BluetoothSocket? = null
+    private var parmcoDevice: BluetoothDevice? = null
+    private val sppUuid: UUID = UUID.fromString(SPP_UUID_STRING)
+    @Volatile private var outputStream: OutputStream? = null
+    private var readThread: Thread? = null
+
+    // --- State ---
+    @Volatile private var isMotorRunning = false
+
+    // Permissions
+    private val bluetoothPermissions = if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.S) {
+        arrayOf(
+            Manifest.permission.BLUETOOTH_SCAN,
+            Manifest.permission.BLUETOOTH_CONNECT,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        )
+    } else {
+        arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION
+        )
+    }
+
+    // --- Activity Result Launchers ---
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions -&gt;
+            if (permissions.values.all { it }) {
+                logToScreen(getString(R.string.log_permissions_granted))
+                startConnectionProcess()
+            } else {
+                logToScreen(getString(R.string.log_error_permission_denied))
+                statusIndicator.setBackgroundResource(R.drawable.status_indicator_denied)
+            }
+        }
+
+    private val requestEnableBluetoothLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result -&gt;
+            if (result.resultCode == RESULT_OK) {
+                logToScreen(getString(R.string.log_bt_enabled))
+                startScan()
+            } else {
+                logToScreen(getString(R.string.log_error_bt_denied))
+                statusIndicator.setBackgroundResource(R.drawable.status_indicator_denied)
+            }
+        }
+
+    // --- Broadcast Receiver ---
+    private val scanReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val action: String? = intent.action
+            if (BluetoothDevice.ACTION_FOUND == action) {
+                val device: BluetoothDevice? = if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.TIRAMISU) {
+                    intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
+                } else {
+                    @Suppress("DEPRECATION")
+                    intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+                }
+                device?.let {
+                    val deviceName = it.name
+                    val deviceAddress = it.address
+                    if (deviceName != null) {
+                        logToScreen(getString(R.string.log_found_device, deviceName, deviceAddress))
+                        if (deviceName.equals(RPI_DEVICE_NAME, ignoreCase = true)) {
+                            logToScreen(getString(R.string.log_found_rpi))
+                            bluetoothAdapter?.cancelDiscovery()
+                            parmcoDevice = it
+                            connectToDevice()
+                        }
+                    }
+                }
+            } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED == action) {
+                logToScreen(getString(R.string.log_scan_finished))
+                if (parmcoDevice == null) {
+                    logToScreen(getString(R.string.log_error_rpi_not_found, RPI_DEVICE_NAME))
+                    statusIndicator.setBackgroundResource(R.drawable.status_indicator_disconnected)
+                }
+            }
+        }
+    }
+
+    // --- Activity Lifecycle ---
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        // Initialize UI elements
+        statusIndicator = findViewById(R.id.status_indicator)
+        statusText = findViewById(R.id.status_text)
+        connectButton = findViewById(R.id.connect_button)
+        connectGroup = findViewById(R.id.connect_group)
+        controlsGroup = findViewById(R.id.controls_group)
+        buttonStartStop = findViewById(R.id.button_start_stop)
+        buttonSpeedDown = findViewById(R.id.button_speed_down)
+        buttonSpeedUp = findViewById(R.id.button_speed_up)
+        switchDirection = findViewById(R.id.switch_direction)
+        switchMode = findViewById(R.id.switch_mode)
+        textActualRpm = findViewById(R.id.text_actual_rpm)
+        buttonDisconnect = findViewById(R.id.button_disconnect)
+        editDesiredRpm = findViewById(R.id.edit_desired_rpm)
+        buttonSetRpm = findViewById(R.id.button_set_rpm)
+        textDesiredRpm = findViewById(R.id.text_desired_rpm)
+
+        // Set initial UI state
+        statusText.text = getString(R.string.log_app_started)
+        controlsGroup.visibility = View.GONE
+
+        // Get Bluetooth adapter
+        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        bluetoothAdapter = bluetoothManager.adapter
+        if (bluetoothAdapter == null) {
+            logToScreen("FATAL: Bluetooth not supported on this device.\n")
+            connectButton.isEnabled = false
+            return
+        }
+
+        // --- Set Click Listeners ---
+        connectButton.setOnClickListener {
+            logToScreen(getString(R.string.log_connect_clicked))
+            parmcoDevice = null
+            checkPermissionsAndConnect()
+        }
+        buttonStartStop.setOnClickListener {
+            isMotorRunning = !isMotorRunning
+            buttonStartStop.text = if (isMotorRunning) "STOP" else "START"
+            sendCommand("START_STOP")
+        }
+        buttonSpeedUp.setOnClickListener {
+            sendCommand("SPEED_UP")
+            if (switchMode.isChecked) {
+                switchMode.isChecked = false
+            }
+        }
+        buttonSpeedDown.setOnClickListener {
+            sendCommand("SPEED_DOWN")
+            if (switchMode.isChecked) {
+                switchMode.isChecked = false
+            }
+        }
+        switchDirection.setOnCheckedChangeListener { _, isChecked -&gt;
+            sendCommand(if (isChecked) "DIR_CCW" else "DIR_CW")
+        }
+        switchMode.setOnCheckedChangeListener { _, isChecked -&gt;
+            if (isChecked) {
+                buttonSpeedUp.isEnabled = false
+                buttonSpeedDown.isEnabled = false
+                sendCommand("MODE_AUTO")
+            } else {
+                buttonSpeedUp.isEnabled = true
+                buttonSpeedDown.isEnabled = true
+                sendCommand("MODE_MANUAL")
+            }
+        }
+        buttonDisconnect.setOnClickListener { disconnect() }
+        
+        buttonSetRpm.setOnClickListener {
+            val rpmString = editDesiredRpm.text.toString()
+            if (rpmString.isNotEmpty()) {
+                sendCommand("SET_RPM:$rpmString")
+                textDesiredRpm.text = rpmString
+                if (!switchMode.isChecked) {
+                    switchMode.isChecked = true
+                }
+            } else {
+                logToScreen("Please enter a desired RPM.\n")
+            }
+        }
+
+        // Register the broadcast receiver
+        val filter = IntentFilter(BluetoothDevice.ACTION_FOUND)
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
+        if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(scanReceiver, filter, RECEIVER_EXPORTED)
+        } else {
+            @Suppress("DEPRECATION")
+            registerReceiver(scanReceiver, filter)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(scanReceiver)
+        disconnect()
+    }
+
+    private fun logToScreen(message: String) {
+        statusText.append(message)
+        Log.d(tag, message)
+    }
+
+    // --- Permission and Scan Logic ---
+    private fun checkPermissionsAndConnect() {
+        val permissionsToRequest = bluetoothPermissions.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+        if (permissionsToRequest.isEmpty()) {
+            logToScreen(getString(R.string.log_permissions_good))
+            startConnectionProcess()
+        } else {
+            val permsString = permissionsToRequest.joinToString()
+            logToScreen(getString(R.string.log_requesting_permissions, permsString))
+            requestPermissionLauncher.launch(permissionsToRequest.toTypedArray())
+        }
+    }
+    private fun startConnectionProcess() {
+        if (bluetoothAdapter?.isEnabled == false) {
+            logToScreen(getString(R.string.log_bt_off))
+            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            requestEnableBluetoothLauncher.launch(enableBtIntent)
+        } else {
+            logToScreen(getString(R.string.log_bt_on))
+            startScan()
+        }
+    }
+    private fun startScan() {
+        if (bluetoothAdapter?.isDiscovering == true) {
+            bluetoothAdapter?.cancelDiscovery()
+        }
+        logToScreen(getString(R.string.log_scan_starting))
+        statusIndicator.setBackgroundResource(R.drawable.status_indicator_connecting)
+        bluetoothAdapter?.startDiscovery()
+    }
+
+    // --- Command/Disconnect Logic ---
+    private fun sendCommand(command: String) {
+        val outStream = outputStream
+        if (outStream == null) {
+            logToScreen("ERROR: Not connected. Cannot send command.\n")
+            return
+        }
+        Thread {
+            try {
+                outStream.write("$command\n".toByteArray())
+                runOnUiThread { logToScreen("Sent: $command\n") }
+            } catch (e: IOException) {
+                Log.e(tag, "Error sending command", e)
+                disconnect()
+            }
+        }.start()
+    }
+
+    private fun disconnect() {
+        if (parmcoSocket == null) return
+        val socket = parmcoSocket
+        val outStream = outputStream
+        parmcoSocket = null
+        outputStream = null
+        isMotorRunning = false
+
+        try {
+            readThread?.interrupt()
+            outStream?.close()
+            socket?.close()
+        } catch (e: IOException) {
+            Log.e(tag, "Error closing socket", e)
+        }
+        
+        runOnUiThread {
+            logToScreen("Disconnected.\n")
+            statusIndicator.setBackgroundResource(R.drawable.status_indicator_denied)
+            controlsGroup.visibility = View.GONE
+            connectGroup.visibility = View.VISIBLE
+            buttonStartStop.text = "START"
+            textActualRpm.text = "--"
+            textDesiredRpm.text = "--"
+            
+            switchMode.isChecked = false
+            buttonSpeedUp.isEnabled = true
+            buttonSpeedDown.isEnabled = true
+        }
+    }
+
+    // --- Read Thread ---
+    private fun startReadThread() {
+        readThread = Thread {
+            val inputStream = parmcoSocket?.inputStream
+            try {
+                inputStream?.bufferedReader()?.use { reader -&gt;
+                    while (parmcoSocket != null &amp;&amp; !Thread.currentThread().isInterrupted) {
+                        val line = reader.readLine()
+                        if (line == null) {
+                            break
+                        }
+                        if (line.startsWith("RPM:")) {
+                            val rpmValue = line.substringAfter("RPM:").trim()
+                            runOnUiThread {
+                                textActualRpm.text = rpmValue
+                            }
+                        }
+                    }
+                }
+            } catch (e: IOException) {
+                Log.w(tag, "Connection lost (read failed): ${e.message}")
+            }
+            disconnect()
+        }
+        readThread?.start()
+    }
+
+
+    // --- Connection Logic (Reflection Hack) ---
+    private fun connectToDevice() {
+        Thread {
+            try {
+                runOnUiThread {
+                    logToScreen(getString(R.string.log_creating_socket))
+                }
+                val method = parmcoDevice?.javaClass?.getMethod(
+                    "createRfcommSocket",
+                    Int::class.javaPrimitiveType
+                )
+                parmcoSocket = method?.invoke(parmcoDevice, 1) as BluetoothSocket
+                parmcoSocket?.connect()
+                outputStream = parmcoSocket?.outputStream
+                startReadThread()
+                runOnUiThread {
+                    logToScreen(getString(R.string.log_connected_success))
+                    statusIndicator.setBackgroundResource(R.drawable.status_indicator_connected)
+                    controlsGroup.visibility = View.VISIBLE
+                    connectGroup.visibility = View.GONE
+                }
+            } catch (e: Exception) {
+                val errorMsg = e.message ?: "Unknown Exception"
+                runOnUiThread {
+                    logToScreen(getString(R.string.log_error_connection_failed, errorMsg))
+                    statusIndicator.setBackgroundResource(R.drawable.status_indicator_denied)
+                }
+                try {
+                    parmcoSocket?.close()
+                } catch (closeException: IOException) {
+                    val closeMsg = closeException.message ?: "Unknown close exception"
+                    runOnUiThread {
+                        logToScreen(getString(R.string.log_error_socket_close, closeMsg))
+                    }
+                }
+            }
+        }.start()
+    }
+}
+                        </code></pre>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>Show `activity_main.xml` (Android App Layout)</summary>
+                    <div class="code-block">
+                        <pre><code>
+&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity"&gt;
+
+    &lt;!-- Status Indicator --&gt;
+    &lt;View
+        android:id="@+id/status_indicator"
+        android:layout_width="32dp"
+        androidD:layout_height="32dp"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/status_indicator_disconnected"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" /&gt;
+
+    &lt;!-- Guideline --&gt;
+    &lt;androidx.constraintlayout.widget.Guideline
+        android:id="@+id/horizontal_guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.65" /&gt;
+
+    &lt;!-- Connection Group --&gt;
+    &lt;androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/connect_group"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintBottom_toTopOf="@+id/horizontal_guideline"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/status_indicator"
+        app:layout_constraintVertical_bias="0.5"&gt;
+
+        &lt;Button
+            android:id="@+id/connect_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/connect_button_text"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" /&gt;
+
+    &lt;/androidx.constraintlayout.widget.ConstraintLayout&gt;
+
+    &lt;!-- Motor Controls Group --&gt;
+    &lt;androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/controls_group"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@+id/horizontal_guideline"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/status_indicator"
+        tools:visibility="visible"&gt;
+        
+        &lt;!-- (All buttons, switches, and text views for controls) --&gt;
+        &lt;Button
+            android:id="@+id/button_start_stop"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="START"
+            app:layout_constraintTop_toTopOf="parent" /&gt;
+        
+        &lt;!-- ... etc ... --&gt;
+
+        &lt;Button
+            android:id="@+id/button_disconnect"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/disconnect_button_text"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/edit_desired_rpm" /&gt;
+
+    &lt;/androidx.constraintlayout.widget.ConstraintLayout&gt;
+
+    &lt;!-- Log Scroller --&gt;
+    &lt;ScrollView
+        android:id="@+id/log_scroller"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_margin="16dp"
+        android:background="#ECECEC"
+        android:padding="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/horizontal_guideline"&gt;
+
+        &lt;TextView
+            android:id="@+id/status_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:textColor="#000000"
+            android:textSize="12sp"
+            tools:text="Log will appear here..." /&gt;
+
+    &lt;/ScrollView&gt;
+
+&lt;/androidx.constraintlayout.widget.ConstraintLayout&gt;
+                        </code></pre>
+                    </div>
+                </details>
+            </div>
+        </section>
+
+        <!-- Documents Section -->
+        <section id="docs" class="py-16">
+            <h3 class="text-2xl font-bold text-center mb-8">AI-Generated Project Summaries</h3>
+            <div class="space-y-4">
+                <details>
+                    <summary>Checkpoint 1: AI-Generated Documentation</summary>
+                    <div class="doc-content">
+                        <h3>Conversation #1 with Claude (Did use final result) - PARMCO Motor Driver Circuit</h3>
+                        <p><strong>Project Context:</strong> This conversation was part of the ECSE 4235 Final Project (Checkpoint #1) for a university senior-level embedded systems course. The team is designing a motor driver circuit to enable a Raspberry Pi 4 to control a 12V DC motor with bidirectional rotation capability for the PARMCO (Phone APP RP4 Motor Control) system.</p>
+                        <p><strong>Critical Design Flaw Identified:</strong> Upon reviewing the project requirements, a fundamental issue was identified: the initial design could not reverse motor direction, which is explicitly required by the project specifications ("At a minimum, you must include: 1) Rotation (clockwise or counterclockwise)").</p>
+                        <p><strong>Final Design Solution:</strong> The final design uses:
+                            <ol>
+                                <li><strong>SN754410 Quadruple Half-H Driver IC:</strong> Chosen because it has internal isolation between VCC1 (5V logic) and VCC2 (12V motor power) and TTL-compatible inputs for the 3.3V RP4.</li>
+                                <li><strong>IRFZ34 N-Channel MOSFET (Q1):</strong> Serves as a master power switch to satisfy the kit component requirement.</li>
+                                <li><strong>Single 4N25 Optocoupler (U1):</strong> Provides galvanic isolation for the master enable switch.</li>
+                            </ol>
+                        </p>
+                    </div>
+                </details>
+                <details>
+                    <summary>Checkpoint 2: AI-Generated Documentation</summary>
+                    <div class="doc-content">
+                        <h3>Conversation #2 with Gemini (used final result) - Headless Bluetooth Pairing & Bluetooth Server Automation</h3>
+                        <p><strong>Project Context:</strong> Address the fundamental requirement that the Pi must be "headless" (no user interaction).</p>
+                        <p><strong>Critical Flaw:</strong> The Pi's OS (BlueZ) required a manual PIN or confirmation prompt, and retained "stale keys" after a device was "forgotten" on the phone.</p>
+                        <p><strong>Final Design Solution:</strong> A 3-part system was implemented:
+                            <ol>
+                                <li><strong>`clear-bt-devices.sh`:</strong> A custom script was created to loop through `bluetoothctl paired-devices` and remove each one.</li>
+                                <li><strong>`parmco-server.service`:</strong> The C server's `systemd` service was modified to run as root and execute the `clear-bt-devices.sh` script on boot (`ExecStartPre=`).</li>
+                                <li><strong>`server.c`:</strong> The C server was modified to call `system("/usr/local/bin/clear-bt-devices.sh")` on every client disconnect.</li>
+                            </ol>
+                        </Dossc>
+                        <h3>Conversation #1 with Claude (worked with given result) - Motor Control Circuit Update (V10 to Functional)</h3>
+                        <p><strong>Critical Issue Discovered:</strong> The CP1 circuit design failed. The RP4's GPIO pin sagged to 2.1V and could only source ~4.17mA, which was not enough current to drive the 4N25 optocoupler's LED.</p>
+                        <p><strong>"Tug of War":</strong> The 4.7kΩ pull-up resistor (2.55mA pull-HIGH) was 8x stronger than the optocoupler's pull-LOW strength (0.3mA). The MOSFET was stuck ON.</p>
+                        <p><strong>Final Design (V11):</strong> The team discovered the optocoupler was unnecessary. The final design <strong>removed the optocoupler</strong> and used a simple NPN Transistor Buffer (2N3904). The RP4 GPIO now sends a low-current signal to the transistor's base, which reliably controls the MOSFET gate.</p>
+                    </div>
+                </details>
+                <details>
+                    <summary>Checkpoint 3: AI-Generated Documentation</summary>
+                    <div class="doc-content">
+                        <h3>Conversation #1 with Gemini - Checkpoint #3 Integration</h3>
+                        <p><strong>Project Context:</strong> This phase integrated all components into the final system, including the "Automatic" PID feedback mode.</p>
+                        <p><strong>Two-Way Data:</strong> The `server.c` file was upgraded to be multithreaded. A `client_write_thread` sends `RPM:....\n` data, and `MainActivity.kt` was updated with a `startReadThread` to parse this data and update the UI.</p>
+                        <p><strong>Closed-Loop Controller (PID Tuning):</strong> The final controller was built iteratively:
+                            <ul>
+                                <li>V1 (P-Only): Was unstable and oscillated.</li>
+                                <li>V2 (PI-Only): Stable but had a large steady-state error (20% offset).</li>
+                                <li>V3 (Advanced User Code): The user provided new `server.c` code with a **Complementary Filter**, **Gain Scheduling** (different PID gains for high/low RPM), and an **Error Deadband** to prevent oscillation.</li>
+                                <li>V4 (Final PID Tuning): The final iterations involved tuning the user's advanced PID controller to fix the remaining steady-state error by adjusting `Kp`, `Ki`, and `Kd` values.</li>
+                            </ul>
+                        </p>
+                        <h3>Conversation with Claude #1 - PID Controller Tuning and Optimization</h3>
+                        <p><strong>Initial Problems:</strong> The team reported sensor noise, steady-state error at high RPM, and massive phase lag from the initial 5-second moving average filter.</p>
+                        <p><strong>Design Evolution (Filtering):</strong>
+                            <ol>
+                                <li><strong>Exponential Filter (Failed):</strong> Introduced too much phase lag.</li>
+                                <li><strong>Median Filter (Failed):</strong> Still had too much delay.</li>
+                                <li><strong>Complementary Filter (Success):</strong> A new filter (`filtered_rpm = 0.85 * instant_rpm + 0.15 * prev_rpm`) was implemented with a 10Hz sampling rate, reducing phase lag by 33x.</li>
+                            </ol>
+                        </p>
+                        <p><strong>Final Optimization (Gain Scheduling):</strong> To fix a final ±4% oscillation, the team implemented error-based gain scheduling. The controller now uses 4 different `Kp` multipliers based on how far the `current_rpm` is from the `desired_rpm`, allowing it to be aggressive when far away and gentle when close to the target.</p>
+                    </div>
+                </details>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center py-8 border-t border-stone-200">
+        <p class="text-stone-500">ECSE 4235 Final Project - Group 5: Liam Dabelstein & Jake VanEssendelft</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Hardware Toggle Logic ---
+            const hwToggle = document.getElementById('hardwareToggle');
+            const hwFlawed = document.getElementById('hw-flawed');
+            const hwFixed = document.getElementById('hw-fixed');
+
+            hwToggle.addEventListener('click', () => {
+                if (hwFixed.classList.contains('hidden')) {
+                    hwFlawed.classList.add('hidden');
+                    hwFixed.classList.remove('hidden');
+                    hwToggle.textContent = 'Show Flawed CP1 Design';
+                } else {
+                    hwFlawed.classList.remove('hidden');
+                    hwFixed.classList.add('hidden');
+                    hwToggle.textContent = 'Show Final Circuit (CP2 Fix)';
+                }
+            });
+
+            // --- PID Chart Logic ---
+            const ctx = document.getElementById('pidChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+                    datasets: [
+                        {
+                            label: 'Target RPM',
+                            data: [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000],
+                            borderColor: '#0369a1', // sky-700
+                            borderDash: [5, 5],
+                            fill: false,
+                            pointRadius: 0,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'P-Only (Oscillation)',
+                            data: [0, 3000, 6000, 4000, 5500, 4500, 5200, 4800, 5100, 4900, 5050],
+                            borderColor: '#ef4444', // red-500
+                            fill: false,
+                            pointRadius: 0,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'PI (Steady-State Error)',
+                            data: [0, 2000, 3500, 4200, 4500, 4600, 4700, 4750, 4780, 4800, 4800],
+                            borderColor: '#f59e0b', // amber-500
+                            fill: false,
+                            pointRadius: 0,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Final PID (Stable & Accurate)',
+                            data: [0, 2500, 4500, 5200, 5050, 4950, 5000, 5000, 5000, 5000, 5000],
+                            borderColor: '#16a34a', // green-600
+                            fill: false,
+                            pointRadius: 0,
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'RPM'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time (seconds)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Conceptual PID Controller Tuning'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
