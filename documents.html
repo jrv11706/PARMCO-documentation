@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PARMCO Project - Documents</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fdfcfb; color: #292524; }
+        html { scroll-behavior: smooth; }
+        .sticky-nav { position: sticky; top: 0; z-index: 50; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); background-color: rgba(253, 252, 251, 0.8); }
+        details > summary { cursor: pointer; padding: 0.75rem 1.5rem; background-color: #e7e5e4; border-radius: 0.5rem; font-weight: 600; transition: background-color 0.2s; }
+        details > summary:hover { background-color: #d6d3d1; }
+        details[open] > summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+        .doc-content { border: 1px solid #e7e5e4; border-top: none; padding: 1.5rem; border-bottom-left-radius: 0.5rem; border-bottom-right-radius: 0.5rem; }
+        .doc-content h3 { font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .doc-content p, .doc-content li { color: #57534e; margin-bottom: 0.75rem; }
+        .doc-content ul, .doc-content ol { padding-left: 1.5rem; list-style: disc; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header & Navigation -->
+    <header class="sticky-nav border-b border-stone-200">
+        <nav class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex-shrink-0">
+                    <span class="text-xl font-bold text-sky-700">PARMCO Project</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="index.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Overview</a>
+                        <a href="hardware.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Hardware</a>
+                        <a href="server.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Server</a>
+                        <a href="app.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">App</a>
+                        <a href="controller.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Controller</a>
+                        <a href="documentation.html" class="text-sky-700 font-bold px-3 py-2 rounded-md text-sm">Documents</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- Documents Section -->
+        <section id="docs" class="py-16">
+            <h2 class="text-3xl font-bold text-center mb-12">AI-Generated Project Summaries</h2>
+            <div class="space-y-4">
+                <details>
+                    <summary>Checkpoint 1: AI-Generated Documentation</summary>
+                    <div class="doc-content">
+                        <h3>Conversation #1 with Claude (Did use final result) - PARMCO Motor Driver Circuit</h3>
+                        <p><strong>Project Context:</strong> This conversation was part of the ECSE 4235 Final Project (Checkpoint #1) for a university senior-level embedded systems course. The team is designing a motor driver circuit to enable a Raspberry Pi 4 to control a 12V DC motor with bidirectional rotation capability for the PARMCO (Phone APP RP4 Motor Control) system.</p>
+                        <p><strong>Critical Design Flaw Identified:</strong> Upon reviewing the project requirements, a fundamental issue was identified: the initial design could not reverse motor direction, which is explicitly required by the project specifications ("At a minimum, you must include: 1) Rotation (clockwise or counterclockwise)").</p>
+                        <p><strong>Final Design Solution:</strong> The final design uses:
+                            <ol>
+                                <li><strong>SN754410 Quadruple Half-H Driver IC:</strong> Chosen because it has internal isolation between VCC1 (5V logic) and VCC2 (12V motor power) and TTL-compatible inputs for the 3.3V RP4.</li>
+                                <li><strong>IRFZ34 N-Channel MOSFET (Q1):</strong> Serves as a master power switch to satisfy the kit component requirement.</li>
+                                <li><strong>Single 4N25 Optocoupler (U1):</strong> Provides galvanic isolation for the master enable switch.</li>
+                            </ol>
+                        </p>
+                    </div>
+                </details>
+                <details>
+                    <summary>Checkpoint 2: AI-Generated Documentation</summary>
+                    <div class="doc-content">
+                        <h3>Conversation #2 with Gemini (used final result) - Headless Bluetooth Pairing & Bluetooth Server Automation</h3>
+                        <p><strong>Project Context:</strong> Address the fundamental requirement that the Pi must be "headless" (no user interaction).</p>
+                        <p><strong>Critical Flaw:</strong> The Pi's OS (BlueZ) required a manual PIN or confirmation prompt, and retained "stale keys" after a device was "forgotten" on the phone.</p>
+                        <p><strong>Final Design Solution:</strong> A 3-part system was implemented:
+                            <ol>
+                                <li><strong>`clear-bt-devices.sh`:</strong> A custom script was created to loop through `bluetoothctl paired-devices` and remove each one.</li>
+                                <li><strong>`parmco-server.service`:</strong> The C server's `systemd` service was modified to run as root and execute the `clear-bt-devices.sh` script on boot (`ExecStartPre=`).</li>
+                                <li><strong>`server.c`:</strong> The C server was modified to call `system("/usr/local/bin/clear-bt-devices.sh")` on every client disconnect.</li>
+                            </ol>
+                        </p>
+                        <h3>Conversation #1 with Claude (worked with given result) - Motor Control Circuit Update (V10 to Functional)</h3>
+                        <p><strong>Critical Issue Discovered:</strong> The CP1 circuit design failed. The RP4's GPIO pin sagged to 2.1V and could only source ~4.17mA, which was not enough current to drive the 4N25 optocoupler's LED.</p>
+                        <p><strong>"Tug of War":</strong> The 4.7kΩ pull-up resistor (2.55mA pull-HIGH) was 8x stronger than the optocoupler's pull-LOW strength (0.3mA). The MOSFET was stuck ON.</p>
+                        <p><strong>Final Design (V11):</strong> The team discovered the optocoupler was unnecessary. The final design <strong>removed the optocoupler</strong> and used a simple NPN Transistor Buffer (2N3904). The RP4 GPIO now sends a low-current signal to the transistor's base, which reliably controls the MOSFET gate.</p>
+                    </div>
+                </details>
+                <details>
+                    <summary>Checkpoint 3: AI-Generated Documentation</summary>
+                    <div class="doc-content">
+                        <h3>Conversation #1 with Gemini - Checkpoint #3 Integration</h3>
+                        <p><strong>Project Context:</strong> This phase integrated all components into the final system, including the "Automatic" PID feedback mode.</p>
+                        <p><strong>Two-Way Data:</strong> The `server.c` file was upgraded to be multithreaded. A `client_write_thread` sends `RPM:....\n` data, and `MainActivity.kt` was updated with a `startReadThread` to parse this data and update the UI.</p>
+                        <p><strong>Closed-Loop Controller (PID Tuning):</strong> The final controller was built iteratively:
+                            <ul>
+                                <li>V1 (P-Only): Was unstable and oscillated.</li>
+                                <li>V2 (PI-Only): Stable but had a large steady-state error (20% offset).</li>
+                                <li>V3 (Advanced User Code): The user provided new `server.c` code with a **Complementary Filter**, **Gain Scheduling** (different PID gains for high/low RPM), and an **Error Deadband** to prevent oscillation.</li>
+                                <li>V4 (Final PID Tuning): The final iterations involved tuning the user's advanced PID controller to fix the remaining steady-state error by adjusting `Kp`, `Ki`, and `Kd` values.</li>
+                            </ul>
+                        </p>
+                        <h3>Conversation with Claude #1 - PID Controller Tuning and Optimization</h3>
+                        <p><strong>Initial Problems:</strong> The team reported sensor noise, steady-state error at high RPM, and massive phase lag from the initial 5-second moving average filter.</p>
+                        <p><strong>Design Evolution (Filtering):</strong>
+                            <ol>
+                                <li><strong>Exponential Filter (Failed):</strong> Introduced too much phase lag.</li>
+                                <li><strong>Median Filter (Failed):</strong> Still had too much delay.</li>
+                                <li><strong>Complementary Filter (Success):</strong> A new filter (`filtered_rpm = 0.85 * instant_rpm + 0.15 * prev_rpm`) was implemented with a 10Hz sampling rate, reducing phase lag by 33x.</li>
+                            </ol>
+                        </p>
+                        <p><strong>Final Optimization (Gain Scheduling):</strong> To fix a final ±4% oscillation, the team implemented error-based gain scheduling. The controller now uses 4 different `Kp` multipliers based on how far the `current_rpm` is from the `desired_rpm`, allowing it to be aggressive when far away and gentle when close to the target.</p>
+                    </div>
+                </details>
+            </div>
+        </section>
+    </main>
+
+    <footer class="text-center py-8 border-t border-stone-200">
+        <p class="text-stone-500">ECSE 4235 Final Project - Group 5: Liam Dabelstein & Jake VanEssendelft</p>
+    </footer>
+
+</body>
+</html>
