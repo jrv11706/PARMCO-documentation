@@ -11,6 +11,9 @@
         html { scroll-behavior: smooth; }
         .sticky-nav { position: sticky; top: 0; z-index: 50; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); background-color: rgba(253, 252, 251, 0.8); }
         .code-block { background-color: #1c1917; color: #e7e5e4; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; font-family: monospace; font-size: 0.875rem; }
+        details > summary { cursor: pointer; padding: 0.75rem 1.5rem; background-color: #e7e5e4; border-radius: 0.5rem; font-weight: 600; transition: background-color 0.2s; }
+        details > summary:hover { background-color: #d6d3d1; }
+        details[open] > summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
     </style>
 </head>
 <body class="antialiased">
@@ -537,97 +540,5 @@ int main(int argc, char **argv)
         <p class="text-stone-500">ECSE 4235 Final Project - Group 5: Liam Dabelstein & Jake VanEssendelft</p>
     </footer>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- Hardware Toggle Logic ---
-            const hwToggle = document.getElementById('hardwareToggle');
-            const hwFlawed = document.getElementById('hw-flawed');
-            const hwFixed = document.getElementById('hw-fixed');
-
-            hwToggle.addEventListener('click', () => {
-                if (hwFixed.classList.contains('hidden')) {
-                    hwFlawed.classList.add('hidden');
-                    hwFixed.classList.remove('hidden');
-                    hwToggle.textContent = 'Show Flawed CP1 Design';
-                } else {
-                    hwFlawed.classList.remove('hidden');
-                    hwFixed.classList.add('hidden');
-                    hwToggle.textContent = 'Show Final Circuit (CP2 Fix)';
-                }
-            });
-
-            // --- PID Chart Logic ---
-            const ctx = document.getElementById('pidChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
-                    datasets: [
-                        {
-                            label: 'Target RPM',
-                            data: [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000],
-                            borderColor: '#0369a1', // sky-700
-                            borderDash: [5, 5],
-                            fill: false,
-                            pointRadius: 0,
-                            tension: 0.1
-                        },
-                        {
-                            label: 'P-Only (Oscillation)',
-                            data: [0, 3000, 6000, 4000, 5500, 4500, 5200, 4800, 5100, 4900, 5050],
-                            borderColor: '#ef4444', // red-500
-                            fill: false,
-                            pointRadius: 0,
-                            tension: 0.1
-                        },
-                        {
-                            label: 'PI (Steady-State Error)',
-                            data: [0, 2000, 3500, 4200, 4500, 4600, 4700, 4750, 4780, 4800, 4800],
-                            borderColor: '#f59e0b', // amber-500
-                            fill: false,
-                            pointRadius: 0,
-                            tension: 0.1
-                        },
-                        {
-                            label: 'Final PID (Stable & Accurate)',
-                            data: [0, 2500, 4500, 5200, 5050, 4950, 5000, 5000, 5000, 5000, 5000],
-                            borderColor: '#16a34a', // green-600
-                            fill: false,
-                            pointRadius: 0,
-                            tension: 0.1
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'RPM'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Time (seconds)'
-                            }
-                        }
-                    },
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Conceptual PID Controller Tuning'
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false
-                        }
-                    }
-                }
-            });
-        });
-    </script>
 </body>
 </html>
