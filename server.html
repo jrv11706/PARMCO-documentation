@@ -5,15 +5,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PARMCO Project - Server</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- 
+      Chosen Palette: Calm Neutral
+      - bg-stone-50 (Warm Neutral Background)
+      - text-stone-800 (Dark, readable text)
+      - bg-sky-700 / text-sky-100 (Subtle, calm blue accent)
+      - bg-stone-200 (Secondary area background)
+    -->
+    <!-- 
+      Application Structure Plan: 
+      A multi-page HTML site. This is the "Server" page.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #fdfcfb; color: #292524; }
-        html { scroll-behavior: smooth; }
-        .sticky-nav { position: sticky; top: 0; z-index: 50; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); background-color: rgba(253, 252, 251, 0.8); }
-        .code-block { background-color: #1c1917; color: #e7e5e4; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; font-family: monospace; font-size: 0.875rem; }
-        details > summary { cursor: pointer; padding: 0.75rem 1.5rem; background-color: #e7e5e4; border-radius: 0.5rem; font-weight: 600; transition: background-color 0.2s; }
-        details > summary:hover { background-color: #d6d3d1; }
-        details[open] > summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfcfb; /* bg-stone-50 */
+            color: #292524; /* text-stone-800 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        html {
+            scroll-behavior: smooth;
+        }
+        .sticky-nav {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            background-color: rgba(253, 252, 251, 0.8);
+        }
+        .code-block {
+            background-color: #1c1917; /* bg-stone-900 */
+            color: #e7e5e4; /* text-stone-200 */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: monospace;
+            font-size: 0.875rem;
+        }
+        details > summary {
+            cursor: pointer;
+            padding: 0.75rem 1.5rem;
+            background-color: #e7e5e4; /* bg-stone-200 */
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        details > summary:hover {
+            background-color: #d6d3d1; /* bg-stone-300 */
+        }
+        details[open] > summary {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -27,12 +82,12 @@
                 </div>
                 <div class="hidden md:block">
                     <div class="ml-10 flex items-baseline space-x-4">
-                        <a href="index.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Overview</a>
-                        <a href="hardware.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Hardware</a>
-                        <a href="server.html" class="text-sky-700 font-bold px-3 py-2 rounded-md text-sm">Server</a>
-                        <a href="app.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">App</a>
-                        <a href="controller.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Controller</a>
-                        <a href="documentation.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Documents</a>
+                        <a href="./index.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Overview</a>
+                        <a href="./hardware.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Hardware</a>
+                        <a href="./server.html" class="font-bold text-sky-700 px-3 py-2 rounded-md text-sm font-medium" aria-current="page">Server</a>
+                        <a href="./app.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">App</a>
+                        <a href="./controller.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Controller</a>
+                        <a href="./documentation.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Documents</a>
                     </div>
                 </div>
             </div>
@@ -41,6 +96,7 @@
 
     <!-- Main Content -->
     <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
         <!-- RPi4 Server Section -->
         <section id="server" class="py-16">
             <h2 class="text-3xl font-bold text-center mb-12">The Headless Raspberry Pi Server</h2>
@@ -64,10 +120,10 @@
             </div>
         </section>
 
-        <!-- Server Code -->
+        <!-- Code Section -->
         <section id="code" class="py-16 bg-stone-100 rounded-lg">
-            <h2 class="text-3xl font-bold text-center mb-12">Server Code</h2>
-            <div class="space-y-4">
+            <h2 class="text-3xl font-bold text-center mb-12">Final Server Code</h2>
+            <div class="space-y-4 max-w-4xl mx-auto">
                 <details>
                     <summary>Show `server.c` (RPi4 Final Code)</summary>
                     <div class="code-block">
@@ -101,6 +157,7 @@
 #define CALCULATION_INTERVAL_MS 100  // Faster sampling for better control (10Hz)
 
 // --- COMPLEMENTARY FILTER (MINIMAL LAG) ---
+// Uses instantaneous measurement for fast response, smooths only for noise
 #define COMPLEMENTARY_ALPHA 0.85  // 85% new data, 15% smoothing - very responsive!
 
 volatile unsigned long rpm_pulse_count = 0;
@@ -112,17 +169,17 @@ pthread_mutex_t rpm_mutex = PTHREAD_MUTEX_INITIALIZER;
 #define FEEDBACK_INTERVAL_MS 100
 const double feedback_interval_s = 0.1;
 
-// Reduced gains for stability - lower Kp to reduce oscillation
-const double Kp_low = 0.0010;   // For RPM &lt; 4000 (reduced from 0.0015)
+// Reduced gains for more stability
+const double Kp_low = 0.0015;   // For RPM &lt; 4000
 const double Ki_low = 0.010;    
-const double Kd_low = 0.0006;   
+const double Kd_low = 0.0008;   
 
-const double Kp_high = 0.0014;  // For RPM &gt;= 4000 (reduced from 0.0020)
+const double Kp_high = 0.0020;  // For RPM &gt;= 4000
 const double Ki_high = 0.016;   
-const double Kd_high = 0.0008;  
+const double Kd_high = 0.0010;  
 
 const double MAX_INTEGRAL = 100.0;
-const double ERROR_DEADBAND = 100.0;  // Increased to absorb ±4% oscillation
+const double ERROR_DEADBAND = 60.0;
 
 // Derivative with higher cutoff (less filtering, more responsive)
 #define DERIVATIVE_FILTER_ALPHA 0.8
@@ -412,18 +469,37 @@ void* client_read_thread(void *args_ptr) {
     return NULL;
 }
 
+// --- MODIFIED: Client Write Thread ---
 void* client_write_thread(void *args_ptr) {
     client_thread_args_t *args = (client_thread_args_t*)args_ptr;
     int client = args->client_socket;
     char rpm_buf[32];
+    char pwm_buf[32]; // NEW buffer for PWM data
+
     while(*(args-&gt;is_connected)) {
+        // Get RPM
         pthread_mutex_lock(&rpm_mutex);
         double rpm = current_rpm;
         pthread_mutex_unlock(&rpm_mutex);
         snprintf(rpm_buf, sizeof(rpm_buf), "RPM:%.1f\n", rpm);
+
+        // --- NEW: Get current speed (0-255) ---
+        // This is thread-safe because current_speed is only
+        // written by the feedback_controller_thread or handle_command,
+        // and this read is atomic.
+        int speed = current_speed; 
+        snprintf(pwm_buf, sizeof(pwm_buf), "PWM:%d\n", speed);
+        // --- END NEW ---
+
+        // Send RPM
         if (write(client, rpm_buf, strlen(rpm_buf)) &lt; 0) {
-            break;
+            break; // Client disconnected
         }
+        // --- NEW: Send PWM ---
+        if (write(client, pwm_buf, strlen(pwm_buf)) &lt; 0) {
+            break; // Client disconnected
+        }
+        
         sleep_ms(RPM_SEND_INTERVAL_MS);
     }
     printf("Client write thread exiting.\n");
@@ -532,13 +608,20 @@ int main(int argc, char **argv)
                         </code></pre>
                     </div>
                 </details>
+
             </div>
         </section>
+
     </main>
 
     <footer class="text-center py-8 border-t border-stone-200">
         <p class="text-stone-500">ECSE 4235 Final Project - Group 5: Liam Dabelstein & Jake VanEssendelft</p>
     </footer>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // This page only contains code blocks, no other JS is needed.
+        });
+    </script>
 </body>
 </html>
