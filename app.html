@@ -5,12 +5,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PARMCO Project - App</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- 
+      Chosen Palette: Calm Neutral
+      - bg-stone-50 (Warm Neutral Background)
+      - text-stone-800 (Dark, readable text)
+      - bg-sky-700 / text-sky-100 (Subtle, calm blue accent)
+      - bg-stone-200 (Secondary area background)
+    -->
+    <!-- 
+      Application Structure Plan: 
+      A multi-page HTML site. This is the "App" page.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #fdfcfb; color: #292524; }
-        html { scroll-behavior: smooth; }
-        .sticky-nav { position: sticky; top: 0; z-index: 50; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); background-color: rgba(253, 252, 251, 0.8); }
-        .code-block { background-color: #1c1917; color: #e7e5e4; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; font-family: monospace; font-size: 0.875rem; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfcfb; /* bg-stone-50 */
+            color: #292524; /* text-stone-800 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        html {
+            scroll-behavior: smooth;
+        }
+        .sticky-nav {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            background-color: rgba(253, 252, 251, 0.8);
+        }
+        .code-block {
+            background-color: #1c1917; /* bg-stone-900 */
+            color: #e7e5e4; /* text-stone-200 */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: monospace;
+            font-size: 0.875rem;
+        }
+        details > summary {
+            cursor: pointer;
+            padding: 0.75rem 1.5rem;
+            background-color: #e7e5e4; /* bg-stone-200 */
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        details > summary:hover {
+            background-color: #d6d3d1; /* bg-stone-300 */
+        }
+        details[open] > summary {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -24,12 +82,12 @@
                 </div>
                 <div class="hidden md:block">
                     <div class="ml-10 flex items-baseline space-x-4">
-                        <a href="index.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Overview</a>
-                        <a href="hardware.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Hardware</a>
-                        <a href="server.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Server</a>
-                        <a href="app.html" class="text-sky-700 font-bold px-3 py-2 rounded-md text-sm">App</a>
-                        <a href="controller.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Controller</a>
-                        <a href="documentation.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Documents</a>
+                        <a href="./index.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Overview</a>
+                        <a href="./hardware.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Hardware</a>
+                        <a href="./server.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Server</a>
+                        <a href="./app.html" class="font-bold text-sky-700 px-3 py-2 rounded-md text-sm font-medium" aria-current="page">App</a>
+                        <a href="./controller.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Controller</a>
+                        <a href="./documentation.html" class="text-stone-600 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Documents</a>
                     </div>
                 </div>
             </div>
@@ -38,12 +96,13 @@
 
     <!-- Main Content -->
     <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
         <!-- App Section -->
         <section id="app" class="py-16">
             <h2 class="text-3xl font-bold text-center mb-12">The Android Application</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                <div class="flex items-center justify-center p-8 bg-white rounded-lg shadow-inner">
-                    <img src="app_screenshot.png" alt="Final App UI" class="rounded-lg shadow-lg" onerror="this.src='https://placehold.co/400x800/e0e0e0/757575?text=app_screenshot.png%0ANot+Found'">
+                <div class="flex items-center justify-center p-8 bg-stone-200 rounded-lg shadow-inner">
+                    <img src="app_screenshot.png" alt="Final App UI" class="rounded-lg shadow-lg" style="max-height: 600px; width: auto;">
                 </div>
                 <div>
                     <h3 class="text-2xl font-semibold">Key Features (Kotlin)</h3>
@@ -55,7 +114,7 @@
                         </li>
                         <li class="flex items-start">
                             <div class="flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full bg-sky-700 text-white font-bold text-sm">2</div>
-                            <p class="ml-4 text-stone-600"><strong class="text-stone-800">Two-Way Data:</strong> A `sendCommand()` function sends string commands (e.g., `DIR_CW\n`), while a `startReadThread()` listens for and parses incoming RPM data (`RPM:5000.0\n`).</p>
+                            <p class="ml-4 text-stone-600"><strong class="text-stone-800">Two-Way Data:</strong> A `sendCommand()` function sends string commands (e.g., `DIR_CW\n`), while a `startReadThread()` listens for and parses incoming RPM (`RPM:...`) and PWM (`PWM:...`) data.</p>
                         </li>
                         <li class="flex items-start">
                             <div class="flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full bg-sky-700 text-white font-bold text-sm">3</div>
@@ -66,10 +125,10 @@
             </div>
         </section>
 
-        <!-- App Code -->
+        <!-- Code Section -->
         <section id="code" class="py-16 bg-stone-100 rounded-lg">
-            <h2 class="text-3xl font-bold text-center mb-12">App Code</h2>
-            <div class="space-y-4">
+            <h2 class="text-3xl font-bold text-center mb-12">Final App Code</h2>
+            <div class="space-y-4 max-w-4xl mx-auto">
                 <details>
                     <summary>Show `MainActivity.kt` (Android App Final Code)</summary>
                     <div class="code-block">
@@ -93,6 +152,7 @@ import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ProgressBar // NEW IMPORT
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -131,6 +191,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var editDesiredRpm: EditText
     private lateinit var buttonSetRpm: Button
     private lateinit var textDesiredRpm: TextView
+    private lateinit var pwmProgressBar: ProgressBar // NEW
 
     // --- Bluetooth ---
     private var bluetoothAdapter: BluetoothAdapter? = null
@@ -234,10 +295,12 @@ class MainActivity : AppCompatActivity() {
         editDesiredRpm = findViewById(R.id.edit_desired_rpm)
         buttonSetRpm = findViewById(R.id.button_set_rpm)
         textDesiredRpm = findViewById(R.id.text_desired_rpm)
+        pwmProgressBar = findViewById(R.id.progress_bar_pwm) // NEW
 
         // Set initial UI state
         statusText.text = getString(R.string.log_app_started)
         controlsGroup.visibility = View.GONE
+        pwmProgressBar.max = 100 // Set max for percentage
 
         // Get Bluetooth adapter
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
@@ -286,7 +349,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         buttonDisconnect.setOnClickListener { disconnect() }
-        
+
         buttonSetRpm.setOnClickListener {
             val rpmString = editDesiredRpm.text.toString()
             if (rpmString.isNotEmpty()) {
@@ -322,7 +385,7 @@ class MainActivity : AppCompatActivity() {
         Log.d(tag, message)
     }
 
-    // --- Permission and Scan Logic ---
+    // --- Permission and Scan Logic (Unchanged) ---
     private fun checkPermissionsAndConnect() {
         val permissionsToRequest = bluetoothPermissions.filter {
             ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
@@ -355,7 +418,7 @@ class MainActivity : AppCompatActivity() {
         bluetoothAdapter?.startDiscovery()
     }
 
-    // --- Command/Disconnect Logic ---
+    // --- Command/Disconnect Logic (Unchanged) ---
     private fun sendCommand(command: String) {
         val outStream = outputStream
         if (outStream == null) {
@@ -373,6 +436,7 @@ class MainActivity : AppCompatActivity() {
         }.start()
     }
 
+    // --- MODIFIED: Disconnect Function ---
     private fun disconnect() {
         if (parmcoSocket == null) return
         val socket = parmcoSocket
@@ -388,7 +452,7 @@ class MainActivity : AppCompatActivity() {
         } catch (e: IOException) {
             Log.e(tag, "Error closing socket", e)
         }
-        
+
         runOnUiThread {
             logToScreen("Disconnected.\n")
             statusIndicator.setBackgroundResource(R.drawable.status_indicator_denied)
@@ -397,14 +461,15 @@ class MainActivity : AppCompatActivity() {
             buttonStartStop.text = "START"
             textActualRpm.text = "--"
             textDesiredRpm.text = "--"
-            
+            pwmProgressBar.progress = 0 // NEW: Reset progress bar
+
             switchMode.isChecked = false
             buttonSpeedUp.isEnabled = true
             buttonSpeedDown.isEnabled = true
         }
     }
 
-    // --- Read Thread ---
+    // --- MODIFIED: Thread to read and parse RPM/PWM data ---
     private fun startReadThread() {
         readThread = Thread {
             val inputStream = parmcoSocket?.inputStream
@@ -415,10 +480,22 @@ class MainActivity : AppCompatActivity() {
                         if (line == null) {
                             break
                         }
+
+                        // Check for RPM data
                         if (line.startsWith("RPM:")) {
                             val rpmValue = line.substringAfter("RPM:").trim()
                             runOnUiThread {
                                 textActualRpm.text = rpmValue
+                            }
+                        }
+                        // NEW: Check for PWM data
+                        else if (line.startsWith("PWM:")) {
+                            val pwmString = line.substringAfter("PWM:").trim()
+                            val pwmValue = pwmString.toIntOrNull() ?: 0
+                            // Calculate percentage (0-255 -> 0-100)
+                            val pwmPercent = (pwmValue * 100) / 255
+                            runOnUiThread {
+                                pwmProgressBar.progress = pwmPercent
                             }
                         }
                     }
@@ -432,7 +509,7 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    // --- Connection Logic (Reflection Hack) ---
+    // --- Connection Logic (Unchanged) ---
     private fun connectToDevice() {
         Thread {
             try {
@@ -492,7 +569,7 @@ class MainActivity : AppCompatActivity() {
     &lt;View
         android:id="@+id/status_indicator"
         android:layout_width="32dp"
-        androidD:layout_height="32dp"
+        android:layout_height="32dp"
         android:layout_marginTop="24dp"
         android:background="@drawable/status_indicator_disconnected"
         app:layout_constraintEnd_toEndOf="parent"
@@ -505,7 +582,7 @@ class MainActivity : AppCompatActivity() {
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.65" /&gt;
+        app:layout_constraintGuide_percent="0.75" /&gt;
 
     &lt;!-- Connection Group --&gt;
     &lt;androidx.constraintlayout.widget.ConstraintLayout
@@ -547,16 +624,147 @@ class MainActivity : AppCompatActivity() {
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/status_indicator"
         tools:visibility="visible"&gt;
-        
-        &lt;!-- (All buttons, switches, and text views for controls) --&gt;
+
         &lt;Button
             android:id="@+id/button_start_stop"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="START"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" /&gt;
-        
-        &lt;!-- ... etc ... --&gt;
+
+        &lt;Button
+            android:id="@+id/button_speed_down"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="4dp"
+            android:text="Speed -"
+            app:layout_constraintEnd_toStartOf="@+id/button_speed_up"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/button_start_stop" /&gt;
+
+        &lt;Button
+            android:id="@+id/button_speed_up"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:text="Speed +"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toEndOf="@+id/button_speed_down"
+            app:layout_constraintTop_toTopOf="@+id/button_speed_down" /&gt;
+
+        &lt;com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switch_direction"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Direction (OFF=CW, ON=CCW)"
+            android:textSize="16sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/button_speed_down" /&gt;
+
+        &lt;com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switch_mode"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Mode (OFF=Manual, ON=Auto)"
+            android:textSize="16sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/switch_direction" /&gt;
+
+        &lt;TextView
+            android:id="@+id/label_actual_rpm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Actual RPM: "
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/switch_mode" /&gt;
+
+        &lt;TextView
+            android:id="@+id/text_actual_rpm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="--"
+            android:textSize="18sp"
+            app:layout_constraintBottom_toBottomOf="@+id/label_actual_rpm"
+            app:layout_constraintStart_toEndOf="@+id/label_actual_rpm"
+            app:layout_constraintTop_toTopOf="@+id/label_actual_rpm" /&gt;
+
+        &lt;TextView
+            android:id="@+id/label_desired_rpm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Desired RPM: "
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/label_actual_rpm" /&gt;
+
+        &lt;TextView
+            android:id="@+id/text_desired_rpm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="--"
+            android:textSize="18sp"
+            app:layout_constraintBottom_toBottomOf="@+id/label_desired_rpm"
+            app:layout_constraintStart_toEndOf="@+id/label_desired_rpm"
+            app:layout_constraintTop_toTopOf="@+id/label_desired_rpm" /&gt;
+
+        &lt;!-- NEW: Duty Cycle Label --&gt;
+        &lt;TextView
+            android:id="@+id/label_duty_cycle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Duty Cycle (0-100%):"
+            android:textSize="16sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/label_desired_rpm" /&gt;
+
+        &lt;!-- NEW: Progress Bar --&gt;
+        &lt;ProgressBar
+            android:id="@+id/progress_bar_pwm"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:max="100"
+            android:progress="0"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/label_duty_cycle" /&gt;
+
+        &lt;EditText
+            android:id="@+id/edit_desired_rpm"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="8dp"
+            android:hint="Set Target RPM"
+            android:inputType="number"
+            app:layout_constraintEnd_toStartOf="@+id/button_set_rpm"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/progress_bar_pwm" /&gt;
+
+        &lt;Button
+            android:id="@+id/button_set_rpm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Set"
+            app:layout_constraintBottom_toBottomOf="@+id/edit_desired_rpm"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/edit_desired_rpm" /&gt;
 
         &lt;Button
             android:id="@+id/button_disconnect"
@@ -570,7 +778,6 @@ class MainActivity : AppCompatActivity() {
 
     &lt;/androidx.constraintlayout.widget.ConstraintLayout&gt;
 
-    &lt;!-- Log Scroller --&gt;
     &lt;ScrollView
         android:id="@+id/log_scroller"
         android:layout_width="0dp"
@@ -601,73 +808,6 @@ class MainActivity : AppCompatActivity() {
             </div>
         </section>
 
-        <!-- Documents Section -->
-        <section id="docs" class="py-16">
-            <h3 class="text-2xl font-bold text-center mb-8">AI-Generated Project Summaries</h3>
-            <div class="space-y-4">
-                <details>
-                    <summary>Checkpoint 1: AI-Generated Documentation</summary>
-                    <div class="doc-content">
-                        <h3>Conversation #1 with Claude (Did use final result) - PARMCO Motor Driver Circuit</h3>
-                        <p><strong>Project Context:</strong> This conversation was part of the ECSE 4235 Final Project (Checkpoint #1) for a university senior-level embedded systems course. The team is designing a motor driver circuit to enable a Raspberry Pi 4 to control a 12V DC motor with bidirectional rotation capability for the PARMCO (Phone APP RP4 Motor Control) system.</p>
-                        <p><strong>Critical Design Flaw Identified:</strong> Upon reviewing the project requirements, a fundamental issue was identified: the initial design could not reverse motor direction, which is explicitly required by the project specifications ("At a minimum, you must include: 1) Rotation (clockwise or counterclockwise)").</p>
-                        <p><strong>Final Design Solution:</strong> The final design uses:
-                            <ol>
-                                <li><strong>SN754410 Quadruple Half-H Driver IC:</strong> Chosen because it has internal isolation between VCC1 (5V logic) and VCC2 (12V motor power) and TTL-compatible inputs for the 3.3V RP4.</li>
-                                <li><strong>IRFZ34 N-Channel MOSFET (Q1):</strong> Serves as a master power switch to satisfy the kit component requirement.</li>
-                                <li><strong>Single 4N25 Optocoupler (U1):</strong> Provides galvanic isolation for the master enable switch.</li>
-                            </ol>
-                        </p>
-                    </div>
-                </details>
-                <details>
-                    <summary>Checkpoint 2: AI-Generated Documentation</summary>
-                    <div class="doc-content">
-                        <h3>Conversation #2 with Gemini (used final result) - Headless Bluetooth Pairing & Bluetooth Server Automation</h3>
-                        <p><strong>Project Context:</strong> Address the fundamental requirement that the Pi must be "headless" (no user interaction).</p>
-                        <p><strong>Critical Flaw:</strong> The Pi's OS (BlueZ) required a manual PIN or confirmation prompt, and retained "stale keys" after a device was "forgotten" on the phone.</p>
-                        <p><strong>Final Design Solution:</strong> A 3-part system was implemented:
-                            <ol>
-                                <li><strong>`clear-bt-devices.sh`:</strong> A custom script was created to loop through `bluetoothctl paired-devices` and remove each one.</li>
-                                <li><strong>`parmco-server.service`:</strong> The C server's `systemd` service was modified to run as root and execute the `clear-bt-devices.sh` script on boot (`ExecStartPre=`).</li>
-                                <li><strong>`server.c`:</strong> The C server was modified to call `system("/usr/local/bin/clear-bt-devices.sh")` on every client disconnect.</li>
-                            </ol>
-                        </Dossc>
-                        <h3>Conversation #1 with Claude (worked with given result) - Motor Control Circuit Update (V10 to Functional)</h3>
-                        <p><strong>Critical Issue Discovered:</strong> The CP1 circuit design failed. The RP4's GPIO pin sagged to 2.1V and could only source ~4.17mA, which was not enough current to drive the 4N25 optocoupler's LED.</p>
-                        <p><strong>"Tug of War":</strong> The 4.7kΩ pull-up resistor (2.55mA pull-HIGH) was 8x stronger than the optocoupler's pull-LOW strength (0.3mA). The MOSFET was stuck ON.</p>
-                        <p><strong>Final Design (V11):</strong> The team discovered the optocoupler was unnecessary. The final design <strong>removed the optocoupler</strong> and used a simple NPN Transistor Buffer (2N3904). The RP4 GPIO now sends a low-current signal to the transistor's base, which reliably controls the MOSFET gate.</p>
-                    </div>
-                </details>
-                <details>
-                    <summary>Checkpoint 3: AI-Generated Documentation</summary>
-                    <div class="doc-content">
-                        <h3>Conversation #1 with Gemini - Checkpoint #3 Integration</h3>
-                        <p><strong>Project Context:</strong> This phase integrated all components into the final system, including the "Automatic" PID feedback mode.</p>
-                        <p><strong>Two-Way Data:</strong> The `server.c` file was upgraded to be multithreaded. A `client_write_thread` sends `RPM:....\n` data, and `MainActivity.kt` was updated with a `startReadThread` to parse this data and update the UI.</p>
-                        <p><strong>Closed-Loop Controller (PID Tuning):</strong> The final controller was built iteratively:
-                            <ul>
-                                <li>V1 (P-Only): Was unstable and oscillated.</li>
-                                <li>V2 (PI-Only): Stable but had a large steady-state error (20% offset).</li>
-                                <li>V3 (Advanced User Code): The user provided new `server.c` code with a **Complementary Filter**, **Gain Scheduling** (different PID gains for high/low RPM), and an **Error Deadband** to prevent oscillation.</li>
-                                <li>V4 (Final PID Tuning): The final iterations involved tuning the user's advanced PID controller to fix the remaining steady-state error by adjusting `Kp`, `Ki`, and `Kd` values.</li>
-                            </ul>
-                        </p>
-                        <h3>Conversation with Claude #1 - PID Controller Tuning and Optimization</h3>
-                        <p><strong>Initial Problems:</strong> The team reported sensor noise, steady-state error at high RPM, and massive phase lag from the initial 5-second moving average filter.</p>
-                        <p><strong>Design Evolution (Filtering):</strong>
-                            <ol>
-                                <li><strong>Exponential Filter (Failed):</strong> Introduced too much phase lag.</li>
-                                <li><strong>Median Filter (Failed):</strong> Still had too much delay.</li>
-                                <li><strong>Complementary Filter (Success):</strong> A new filter (`filtered_rpm = 0.85 * instant_rpm + 0.15 * prev_rpm`) was implemented with a 10Hz sampling rate, reducing phase lag by 33x.</li>
-                            </ol>
-                        </p>
-                        <p><strong>Final Optimization (Gain Scheduling):</strong> To fix a final ±4% oscillation, the team implemented error-based gain scheduling. The controller now uses 4 different `Kp` multipliers based on how far the `current_rpm` is from the `desired_rpm`, allowing it to be aggressive when far away and gentle when close to the target.</p>
-                    </div>
-                </details>
-            </div>
-        </section>
-
     </main>
 
     <footer class="text-center py-8 border-t border-stone-200">
@@ -676,94 +816,7 @@ class MainActivity : AppCompatActivity() {
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- Hardware Toggle Logic ---
-            const hwToggle = document.getElementById('hardwareToggle');
-            const hwFlawed = document.getElementById('hw-flawed');
-            const hwFixed = document.getElementById('hw-fixed');
-
-            hwToggle.addEventListener('click', () => {
-                if (hwFixed.classList.contains('hidden')) {
-                    hwFlawed.classList.add('hidden');
-                    hwFixed.classList.remove('hidden');
-                    hwToggle.textContent = 'Show Flawed CP1 Design';
-                } else {
-                    hwFlawed.classList.remove('hidden');
-                    hwFixed.classList.add('hidden');
-                    hwToggle.textContent = 'Show Final Circuit (CP2 Fix)';
-                }
-            });
-
-            // --- PID Chart Logic ---
-            const ctx = document.getElementById('pidChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
-                    datasets: [
-                        {
-                            label: 'Target RPM',
-                            data: [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000],
-                            borderColor: '#0369a1', // sky-700
-                            borderDash: [5, 5],
-                            fill: false,
-                            pointRadius: 0,
-                            tension: 0.1
-                        },
-                        {
-                            label: 'P-Only (Oscillation)',
-                            data: [0, 3000, 6000, 4000, 5500, 4500, 5200, 4800, 5100, 4900, 5050],
-                            borderColor: '#ef4444', // red-500
-                            fill: false,
-                            pointRadius: 0,
-                            tension: 0.1
-                        },
-                        {
-                            label: 'PI (Steady-State Error)',
-                            data: [0, 2000, 3500, 4200, 4500, 4600, 4700, 4750, 4780, 4800, 4800],
-                            borderColor: '#f59e0b', // amber-500
-                            fill: false,
-                            pointRadius: 0,
-                            tension: 0.1
-                        },
-                        {
-                            label: 'Final PID (Stable & Accurate)',
-                            data: [0, 2500, 4500, 5200, 5050, 4950, 5000, 5000, 5000, 5000, 5000],
-                            borderColor: '#16a34a', // green-600
-                            fill: false,
-                            pointRadius: 0,
-                            tension: 0.1
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'RPM'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Time (seconds)'
-                            }
-                        }
-                    },
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Conceptual PID Controller Tuning'
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false
-                        }
-                    }
-                }
-            });
+            // This page only contains code blocks, no other JS is needed.
         });
     </script>
 </body>
