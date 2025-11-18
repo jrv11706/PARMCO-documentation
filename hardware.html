@@ -37,42 +37,53 @@
     </header>
 
     <!-- Main Content -->
-    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <!-- Hardware Section -->
         <section id="hardware" class="py-16">
-            <div class="text-center">
+            
+            <!-- Header Section -->
+            <div class="text-center mb-12">
                 <h2 class="text-3xl font-bold mb-4">Hardware Evolution</h2>
                 <p class="text-lg text-stone-600 max-w-3xl mx-auto">The initial CP1 circuit design was flawed. A critical "Tug of War" was discovered during physical testing, which required a complete redesign of the master power switch.</p>
                 <button id="hardwareToggle" class="mt-6 px-6 py-2 bg-sky-700 text-white font-semibold rounded-lg shadow-md hover:bg-sky-800 transition-colors">Show Final Circuit (CP2 Fix)</button>
             </div>
 
-            <div id="hardwareContent" class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                <!-- Flawed Design -->
+            <!-- Text Content (Full Width) -->
+            <div id="hardwareContent" class="max-w-4xl mx-auto bg-stone-50 p-6 rounded-lg border border-stone-200 shadow-sm">
+                <!-- Flawed Design Text -->
                 <div id="hw-flawed">
-                    <h3 class="text-2xl font-semibold text-red-600">Flawed CP1 Design: The "Tug of War"</h3>
-                    <p class="mt-4 text-stone-700">The initial design used an optocoupler for isolation. This failed because the RP4's weak 3.3V GPIO pin (~2.5mA) could not power the optocoupler's LED enough to overcome the 4.7kΩ pull-up resistor (pulling with 2.55mA). The optocoupler lost the "tug of war," and the MOSFET was stuck permanently ON.</p>
-                    <ul class="mt-4 space-y-2 list-disc list-inside">
-                        <li><span class="font-semibold">Flaw:</span> RP4 GPIO cannot source enough current.</li>
-                        <li><span class="font-semibold">Symptom:</span> Optocoupler pull-down (0.3mA) was weaker than the resistor's pull-up (2.55mA).</li>
-                        <li><span class="font-semibold">Result:</span> Motor was stuck ON, `START_STOP` command failed.</li>
+                    <h3 class="text-2xl font-semibold text-red-600 border-b border-red-200 pb-2 mb-4">Flawed CP1 Design: The "Tug of War"</h3>
+                    <p class="mt-2 text-stone-700">The initial design used an optocoupler for isolation. This failed because the RP4's weak 3.3V GPIO pin (~2.5mA) could not power the optocoupler's LED enough to overcome the 4.7kΩ pull-up resistor (pulling with 2.55mA). The optocoupler lost the "tug of war," and the MOSFET was stuck permanently ON.</p>
+                    <ul class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <li class="bg-white p-3 rounded border border-stone-200 shadow-sm"><span class="block font-bold text-stone-800 mb-1">Flaw:</span> RP4 GPIO cannot source enough current.</li>
+                        <li class="bg-white p-3 rounded border border-stone-200 shadow-sm"><span class="block font-bold text-stone-800 mb-1">Symptom:</span> Optocoupler pull-down (0.3mA) was weaker than pull-up.</li>
+                        <li class="bg-white p-3 rounded border border-stone-200 shadow-sm"><span class="block font-bold text-stone-800 mb-1">Result:</span> Motor was stuck ON.</li>
                     </ul>
                 </div>
-                <!-- Fixed Design -->
+                <!-- Fixed Design Text -->
                 <div id="hw-fixed" class="hidden">
-                    <h3 class="text-2xl font-semibold text-green-600">Final CP2 Design: NPN Transistor Buffer</h3>
-                    <p class="mt-4 text-stone-700">The optocoupler was removed entirely. It was replaced with a simple NPN transistor buffer. The RP4's GPIO now sends a low-current *signal* to the transistor, which then does the "heavy lifting" of sinking the 2.55mA from the pull-up resistor. This reliably pulls the MOSFET gate LOW and turns the motor OFF.</p>
-                    <ul class="mt-4 space-y-2 list-disc list-inside">
-                        <li><span class="font-semibold">Fix:</span> Use GPIO as a signal, not a power source.</li>
-                        <li><span class="font-semibold">Component:</span> A 2N3904 NPN Transistor acts as the switch.</li>
-                        <li><span class="font-semibold">Result:</span> A simple, reliable circuit that sacrifices isolation for functionality.</li>
+                    <h3 class="text-2xl font-semibold text-green-600 border-b border-green-200 pb-2 mb-4">Final CP2 Design: NPN Transistor Buffer</h3>
+                    <p class="mt-2 text-stone-700">The optocoupler was removed entirely. It was replaced with a simple NPN transistor buffer. The RP4's GPIO now sends a low-current *signal* to the transistor, which then does the "heavy lifting" of sinking the 2.55mA from the pull-up resistor. This reliably pulls the MOSFET gate LOW and turns the motor OFF.</p>
+                    <ul class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <li class="bg-white p-3 rounded border border-stone-200 shadow-sm"><span class="block font-bold text-stone-800 mb-1">Fix:</span> Use GPIO as a signal, not a power source.</li>
+                        <li class="bg-white p-3 rounded border border-stone-200 shadow-sm"><span class="block font-bold text-stone-800 mb-1">Component:</span> 2N3904 NPN Transistor acts as the switch.</li>
+                        <li class="bg-white p-3 rounded border border-stone-200 shadow-sm"><span class="block font-bold text-stone-800 mb-1">Result:</span> Reliable control sacrificing isolation.</li>
                     </ul>
-                </div>
-
-                <!-- Image: Replaced with your final circuit diagram -->
-                <div class="flex items-center justify-center p-8 bg-white rounded-lg shadow-inner">
-                    <img src="circuit_diagram.png" alt="Final Circuit Diagram" class="rounded-lg w-full h-auto" onerror="this.src='https://placehold.co/600x400/e0e0e0/757575?text=circuit_diagram.png%0ANot+Found'">
                 </div>
             </div>
+
+            <!-- Image Section (Large & Centered) -->
+            <div class="mt-12">
+                <h3 class="text-xl font-semibold text-center mb-4 text-stone-500 uppercase tracking-wider">System Schematic</h3>
+                <div class="flex justify-center">
+                    <!-- Container allows image to grow up to 7xl width -->
+                    <div class="bg-white p-2 md:p-6 rounded-xl shadow-xl border border-stone-200 w-full overflow-hidden">
+                        <img src="circuit_diagram.png" alt="Final Circuit Diagram" class="w-full h-auto rounded-lg" onerror="this.src='https://placehold.co/1200x800/e0e0e0/757575?text=circuit_diagram.png%0ANot+Found'">
+                    </div>
+                </div>
+                <p class="text-center text-sm text-stone-400 mt-4">High-resolution schematic. View on desktop for best detail.</p>
+            </div>
+
         </section>
     </main>
 
@@ -87,15 +98,23 @@
             const hwFlawed = document.getElementById('hw-flawed');
             const hwFixed = document.getElementById('hw-fixed');
 
+            // Initial state check (optional, to match HTML state)
+            
             hwToggle.addEventListener('click', () => {
                 if (hwFixed.classList.contains('hidden')) {
+                    // Show Fixed
                     hwFlawed.classList.add('hidden');
                     hwFixed.classList.remove('hidden');
                     hwToggle.textContent = 'Show Flawed CP1 Design';
+                    hwToggle.classList.remove('bg-sky-700', 'hover:bg-sky-800');
+                    hwToggle.classList.add('bg-stone-600', 'hover:bg-stone-700');
                 } else {
+                    // Show Flawed
                     hwFlawed.classList.remove('hidden');
                     hwFixed.classList.add('hidden');
                     hwToggle.textContent = 'Show Final Circuit (CP2 Fix)';
+                    hwToggle.classList.add('bg-sky-700', 'hover:bg-sky-800');
+                    hwToggle.classList.remove('bg-stone-600', 'hover:bg-stone-700');
                 }
             });
         });
