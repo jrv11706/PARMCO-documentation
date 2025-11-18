@@ -5,33 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PARMCO Project - Home</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- 
-      Chosen Palette: Calm Neutral
-      - bg-stone-50 (Warm Neutral Background)
-      - text-stone-800 (Dark, readable text)
-      - bg-sky-700 / text-sky-100 (Subtle, calm blue accent)
-      - bg-stone-200 (Secondary area background)
-    -->
-    <!-- 
-      Application Structure Plan: 
-      A multi-page HTML site. Each major section is a separate file.
-      - index.html: Home/Overview
-      - hardware.html: Hardware Evolution
-      - server.html: RPi4 Server & Headless setup
-      - app.html: Android App details
-      - controller.html: PID Controller logic
-      - documentation.html: AI-generated summaries
-      This is more organized and editable for the user.
-    -->
-    <!-- 
-      Visualization & Content Choices:
-      Interactions are now split across pages.
-      - hardware.html: Contains the JS toggle for the "Tug of War" diagram.
-      - controller.html: Contains the Chart.js PID visualization.
-      - documentation.html: Contains the collapsible <details> tags.
-    -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -57,50 +32,6 @@
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             background-color: rgba(253, 252, 251, 0.8);
-        }
-        .code-block {
-            background-color: #1c1917; /* bg-stone-900 */
-            color: #e7e5e4; /* text-stone-200 */
-            padding: 1rem;
-            border-radius: 0.5rem;
-            overflow-x: auto;
-            font-family: monospace;
-            font-size: 0.875rem;
-        }
-        details > summary {
-            cursor: pointer;
-            padding: 0.75rem 1.5rem;
-            background-color: #e7e5e4; /* bg-stone-200 */
-            border-radius: 0.5rem;
-            font-weight: 600;
-            transition: background-color 0.2s;
-        }
-        details > summary:hover {
-            background-color: #d6d3d1; /* bg-stone-300 */
-        }
-        details[open] > summary {
-            border-bottom-left-radius: 0;
-            border-bottom-right-radius: 0;
-        }
-        .doc-content {
-            border: 1px solid #e7e5e4; /* border-stone-200 */
-            border-top: none;
-            padding: 1.5rem;
-            border-bottom-left-radius: 0.5rem;
-            border-bottom-right-radius: 0.5rem;
-        }
-        .doc-content h3 {
-            font-size: 1.125rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-        .doc-content p, .doc-content li {
-            color: #57534e; /* text-stone-600 */
-            margin-bottom: 0.75rem;
-        }
-        .doc-content ul, .doc-content ol {
-            padding-left: 1.5rem;
-            list-style: disc;
         }
     </style>
 </head>
@@ -145,7 +76,7 @@
         </section>
 
         <!-- Project Requirements Section -->
-        <section id="requirements" class="py-16 bg-stone-100 rounded-lg">
+        <section id="requirements" class="py-16 bg-stone-100 rounded-lg mb-16">
             <div class="text-center">
                 <h2 class="text-3xl font-bold mb-4">Project Requirements</h2>
                 <p class="text-lg text-stone-600 max-w-3xl mx-auto">These are the minimum goals extracted from the original project document that guided our design.</p>
@@ -173,6 +104,46 @@
                         <li>Code must be written in C or Assembly</li>
                     </ul>
                 </div>
+            </div>
+        </section>
+
+        <!-- NEW: AI Collaboration Stats Section -->
+        <section id="ai-stats" class="py-16 mb-16">
+            <h2 class="text-3xl font-bold text-center mb-12">AI Collaboration Statistics</h2>
+            <p class="text-center text-lg text-stone-600 max-w-3xl mx-auto mb-12">
+                This project relied heavily on generative AI (Gemini 2.5 Pro & Claude AI) for code generation, debugging, and documentation. Here is a breakdown of our usage.
+            </p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 text-center">
+                <!-- Stat 1 -->
+                <div class="p-6 bg-white rounded-lg shadow border border-stone-100">
+                    <div class="text-4xl font-bold text-sky-700">~120</div>
+                    <div class="mt-2 text-stone-600 font-semibold">Total Prompts</div>
+                    <p class="mt-2 text-sm text-stone-500">Across 3 checkpoints</p>
+                </div>
+                <!-- Stat 2 -->
+                <div class="p-6 bg-white rounded-lg shadow border border-stone-100">
+                    <div class="text-4xl font-bold text-emerald-600">0.36 kWh</div>
+                    <div class="mt-2 text-stone-600 font-semibold">Est. Energy Used</div>
+                    <p class="mt-2 text-sm text-stone-500">~0.003 kWh per prompt</p>
+                </div>
+                <!-- Stat 3 -->
+                <div class="p-6 bg-white rounded-lg shadow border border-stone-100">
+                    <div class="text-4xl font-bold text-amber-600">36 Hours</div>
+                    <div class="mt-2 text-stone-600 font-semibold">Lightbulb Equivalent</div>
+                    <p class="mt-2 text-sm text-stone-500">Powering an LED bulb</p>
+                </div>
+            </div>
+
+            <div class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow-lg border border-stone-100">
+                <div class="chart-container">
+                    <canvas id="aiUsageChart"></canvas>
+                </div>
+                <p class="text-center text-sm text-stone-500 mt-4">
+                    * Checkpoint 1: Initial Design & Strategy<br>
+                    * Checkpoint 2: Hardware Build & Bluetooth Debugging (Heavy usage)<br>
+                    * Checkpoint 3: PID Tuning & Final Integration (Heaviest usage)
+                </p>
             </div>
         </section>
 
@@ -220,5 +191,54 @@
         <p class="text-stone-500">ECSE 4235 Final Project - Group 5: Liam Dabelstein & Jake VanEssendelft</p>
     </footer>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- AI Usage Chart ---
+            const ctx = document.getElementById('aiUsageChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Checkpoint 1', 'Checkpoint 2', 'Checkpoint 3'],
+                    datasets: [{
+                        label: 'Prompts Used',
+                        data: [15, 45, 60],
+                        backgroundColor: [
+                            'rgba(3, 105, 161, 0.6)', // sky-700
+                            'rgba(3, 105, 161, 0.7)',
+                            'rgba(3, 105, 161, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgb(3, 105, 161)',
+                            'rgb(3, 105, 161)',
+                            'rgb(3, 105, 161)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Prompts'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'AI Prompts per Project Phase'
+                        },
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>
