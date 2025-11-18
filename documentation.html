@@ -20,6 +20,13 @@
         .doc-content ul { padding-left: 1.5rem; list-style: disc; margin-bottom: 1rem; }
         .doc-content ol { padding-left: 1.5rem; list-style: decimal; margin-bottom: 1rem; }
         .doc-content strong { color: #292524; }
+        
+        /* Table Styles */
+        .doc-table { width: 100%; border-collapse: collapse; margin-top: 1rem; margin-bottom: 1.5rem; font-size: 0.9rem; }
+        .doc-table th { background-color: #f5f5f4; color: #44403c; font-weight: 600; text-align: left; padding: 0.75rem; border-bottom: 2px solid #e7e5e4; }
+        .doc-table td { padding: 0.75rem; border-bottom: 1px solid #e7e5e4; color: #57534e; }
+        .doc-table tr:last-child td { border-bottom: none; }
+        .doc-table code { background-color: #f5f5f4; padding: 0.2rem 0.4rem; border-radius: 0.25rem; font-family: monospace; color: #dc2626; }
     </style>
 </head>
 <body class="antialiased">
@@ -52,8 +59,150 @@
             <h2 class="text-3xl font-bold text-center mb-12">Project Documentation</h2>
             <div class="space-y-4">
 
-                <!-- NEW: Library Reference -->
-                <details open>
+                <!-- NEW: Hardware Analysis (Top Priority) -->
+                <details>
+                    <summary>PARMCO Hardware Design & Analysis</summary>
+                    <div class="doc-content">
+                        <p>This document provides a detailed technical analysis of the motor control circuit designed for the PARMCO project, explaining the theory of operation and hardware-software integration.</p>
+
+                        <h3>1. Circuit Overview: Theory of Operation</h3>
+                        <p>The PARMCO circuit is a <strong>Bridge-Driver topology</strong> designed to control a 12V DC motor using 3.3V logic signals from a Raspberry Pi 4.</p>
+                        
+                        <h4>A. The H-Bridge Core (Direction)</h4>
+                        <p>At the heart of the design is the <strong>SN754410 Quadruple Half-H Driver</strong>.</p>
+                        <ul>
+                            <li><strong>Forward:</strong> Input 1A is HIGH and 2A is LOW.</li>
+                            <li><strong>Reverse:</strong> Input 1A is LOW and 2A is HIGH.</li>
+                            <li><strong>Brake/Stop:</strong> Inputs are equal (High/High or Low/Low).</li>
+                        </ul>
+
+                        <h4>B. Speed Control (PWM)</h4>
+                        <p>Speed is controlled via <strong>Pulse Width Modulation (PWM)</strong> applied to the <strong>Enable Pin (1,2EN)</strong> of the driver IC. This design gates the entire half-bridge on and off rapidly (1kHz) rather than pulsing the direction pins.</p>
+
+                        <h4>C. The "Buffered" Master Power Switch</h4>
+                        <p>A unique feature is the <strong>Buffered High-Side Switch</strong> controlling the <code>VCC2</code> (Pin 8) power input. This solves the problem where the RPi GPIO is too weak to drive the MOSFET safety switch directly.</p>
+                        <p><strong>The Solution (NPN Buffer):</strong></p>
+                        <ul>
+                            <li><strong>GPIO HIGH (3.3V):</strong> Q2 turns ON → Connects Q1 Gate to GND → Q1 OFF → <strong>Motor Power CUT (Safety).</strong></li>
+                            <li><strong>GPIO LOW (0V):</strong> Q2 turns OFF → R2 Pulls Q1 Gate to 12V → Q1 ON → <strong>Motor Power ENABLED.</strong></li>
+                        </ul>
+
+                        <h3>2. Hardware-Software Integration</h3>
+                        <p>This table details exactly how the C code in <code>server.c</code> manipulates the physical pins.</p>
+                        <div class="overflow-x-auto">
+                            <table class="doc-table">
+                                <thead>
+                                    <tr>
+                                        <th>Component</th>
+                                        <th>Pin (BCM)</th>
+                                        <th>Software Variable</th>
+                                        <th>Function / Logic</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Master Enable</strong></td>
+                                        <td>GPIO 17</td>
+                                        <td><code>MASTER_ENABLE_PIN</code></td>
+                                        <td><strong>Active LOW Logic</strong>.<br>Code: <code>gpioWrite(17, 1)</code> (HIGH) turns Motor Power <strong>OFF</strong>.</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>PWM Enable</strong></td>
+                                        <td>GPIO 18</td>
+                                        <td><code>PWM_PIN</code></td>
+                                        <td><strong>Hardware PWM</strong>.<br>Code: <code>gpioHardwarePWM(18, 1000, duty)</code> pulses the Enable Pin.</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Direction 1A</strong></td>
+                                        <td>GPIO 27</td>
+                                        <td><code>DIR_A_PIN</code></td>
+                                        <td><strong>Logic Input 1</strong>. High/Low determines CW/CCW.</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Direction 2A</strong></td>
+                                        <td>GPIO 22</td>
+                                        <td><code>DIR_B_PIN</code></td>
+                                        <td><strong>Logic Input 2</strong>. Inverse of Dir 1A for motion.</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>RPM Sensor</strong></td>
+                                        <td>GPIO 23</td>
+                                        <td><code>RPM_SENSOR_PIN</code></td>
+                                        <td><strong>Interrupt Input</strong>.<br>Code: <code>gpioSetISRFunc(...)</code> counts Falling Edges.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h3>3. Bill of Materials (BOM)</h3>
+                        <div class="overflow-x-auto">
+                            <table class="doc-table">
+                                <thead>
+                                    <tr>
+                                        <th>Part ID</th>
+                                        <th>Component</th>
+                                        <th>Value</th>
+                                        <th>Function</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>U2</strong></td>
+                                        <td>SN754410</td>
+                                        <td>Quad Half-H</td>
+                                        <td>Main motor driver IC.</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Q1</strong></td>
+                                        <td>IRFZ34</td>
+                                        <td>N-MOSFET</td>
+                                        <td>Master power switch (12V rail).</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Q2</strong></td>
+                                        <td>2N3904</td>
+                                        <td>NPN Transistor</td>
+                                        <td>Signal Buffer for GPIO.</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>M1</strong></td>
+                                        <td>PC-260SB</td>
+                                        <td>12V DC Motor</td>
+                                        <td>Actuator.</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>R2</strong></td>
+                                        <td>Resistor</td>
+                                        <td>4.7kΩ</td>
+                                        <td>Pull-up resistor for Q1 Gate.</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>R3</strong></td>
+                                        <td>Resistor</td>
+                                        <td>10kΩ</td>
+                                        <td>Base resistor for Q2.</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Sensor</strong></td>
+                                        <td>IR Module</td>
+                                        <td>3-Pin</td>
+                                        <td>Optical RPM feedback.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <h3>4. Critical Design Notes</h3>
+                        <ul>
+                            <li><strong>Inverted Logic Safety:</strong> Writing a logic <code>1</code> (HIGH) to GPIO 17 turns the motor <strong>OFF</strong>. This is a "Fail-Safe"; if the RPi loses power/logic, the motor might enable via R2, but direction pins will be low, preventing runaway.</li>
+                            <li><strong>Source Follower Topology:</strong> Q1 is used on the "High Side". Voltage at Source is approx <code>12V - V_th (4V) = 8V</code>. This simplifies the design by avoiding a P-Channel MOSFET.</li>
+                            <li><strong>Current Sinking:</strong> Q2 must sink 2.55mA, which is well within the 2N3904's 200mA limit.</li>
+                        </ul>
+                    </div>
+                </details>
+
+                <!-- Library Reference (Now Closed by default) -->
+                <details>
                     <summary>Master Library & Dependency Reference</summary>
                     <div class="doc-content">
                         <p>This section details the software libraries, frameworks, and system tools utilized in the PARMCO project, explaining the "What," "How," and "Why" behind each.</p>
@@ -65,7 +214,7 @@
                             <li><strong>How it works:</strong> Uses the DMA (Direct Memory Access) controller to write directly to hardware registers, unlike standard Sysfs GPIO.</li>
                             <li><strong>Why we use it:</strong> Provides jitter-free, hardware-timed PWM (crucial for motor stability) and microsecond-level timestamping for accurate RPM sensing.</li>
                         </ul>
-
+                        <!-- (Rest of content remains unchanged) -->
                         <h4>2. bluetooth/bluetooth.h & rfcomm.h (BlueZ Stack)</h4>
                         <ul>
                             <li><strong>What it is:</strong> Headers for BlueZ, the Linux Bluetooth protocol stack.</li>
