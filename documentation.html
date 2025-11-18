@@ -14,9 +14,12 @@
         details > summary:hover { background-color: #d6d3d1; }
         details[open] > summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
         .doc-content { border: 1px solid #e7e5e4; border-top: none; padding: 1.5rem; border-bottom-left-radius: 0.5rem; border-bottom-right-radius: 0.5rem; }
-        .doc-content h3 { font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem; }
-        .doc-content p, .doc-content li { color: #57534e; margin-bottom: 0.75rem; }
-        .doc-content ul, .doc-content ol { padding-left: 1.5rem; list-style: disc; }
+        .doc-content h3 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; margin-top: 1.5rem; color: #0369a1; }
+        .doc-content h4 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; margin-top: 1rem; color: #44403c; }
+        .doc-content p, .doc-content li { color: #57534e; margin-bottom: 0.5rem; line-height: 1.6; }
+        .doc-content ul { padding-left: 1.5rem; list-style: disc; margin-bottom: 1rem; }
+        .doc-content ol { padding-left: 1.5rem; list-style: decimal; margin-bottom: 1rem; }
+        .doc-content strong { color: #292524; }
     </style>
 </head>
 <body class="antialiased">
@@ -46,8 +49,57 @@
     <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <!-- Documents Section -->
         <section id="docs" class="py-16">
-            <h2 class="text-3xl font-bold text-center mb-12">AI-Generated Project Summaries</h2>
+            <h2 class="text-3xl font-bold text-center mb-12">Project Documentation</h2>
             <div class="space-y-4">
+
+                <!-- NEW: Library Reference -->
+                <details open>
+                    <summary>Master Library & Dependency Reference</summary>
+                    <div class="doc-content">
+                        <p>This section details the software libraries, frameworks, and system tools utilized in the PARMCO project, explaining the "What," "How," and "Why" behind each.</p>
+                        
+                        <h3>Part 1: Raspberry Pi 4 Server (C Language)</h3>
+                        <h4>1. pigpio.h (PIGPIO Library)</h4>
+                        <ul>
+                            <li><strong>What it is:</strong> A C library for the Raspberry Pi that allows control of GPIO pins.</li>
+                            <li><strong>How it works:</strong> Uses the DMA (Direct Memory Access) controller to write directly to hardware registers, unlike standard Sysfs GPIO.</li>
+                            <li><strong>Why we use it:</strong> Provides jitter-free, hardware-timed PWM (crucial for motor stability) and microsecond-level timestamping for accurate RPM sensing.</li>
+                        </ul>
+
+                        <h4>2. bluetooth/bluetooth.h & rfcomm.h (BlueZ Stack)</h4>
+                        <ul>
+                            <li><strong>What it is:</strong> Headers for BlueZ, the Linux Bluetooth protocol stack.</li>
+                            <li><strong>Why we use it:</strong> Allows the C program to treat a Bluetooth connection like a standard network socket using the RFCOMM protocol (Serial Port Profile), enabling simple stream-based communication with the phone.</li>
+                        </ul>
+
+                        <h4>3. pthread.h (POSIX Threads)</h4>
+                        <ul>
+                            <li><strong>What it is:</strong> The standard threading library for Unix-like OS.</li>
+                            <li><strong>Why we use it:</strong> The server has conflicting real-time requirements. We use threads to run the <strong>PID Controller</strong> (100ms loop), the <strong>RPM Calculator</strong>, and the <strong>Bluetooth Listener</strong> simultaneously on different CPU cores.</li>
+                        </ul>
+
+                        <h3>Part 2: Android Application (Kotlin/Java)</h3>
+                        <h4>1. android.bluetooth.* (Android Bluetooth API)</h4>
+                        <ul>
+                            <li><strong>Includes:</strong> BluetoothAdapter, BluetoothDevice, BluetoothSocket.</li>
+                            <li><strong>Why we use it:</strong> The only way to access the phone's radio. We specifically use `createRfcommSocket` to establish the SPP connection required to talk to the C server.</li>
+                        </ul>
+
+                        <h4>2. androidx.activity.result.contract (Activity Result API)</h4>
+                        <ul>
+                            <li><strong>What it is:</strong> The modern API for requesting Permissions.</li>
+                            <li><strong>Why we use it:</strong> Android 12+ requires complex runtime permission requests (`BLUETOOTH_SCAN`, `BLUETOOTH_CONNECT`). This library simplifies the logic of asking the user for these rights via callbacks.</li>
+                        </ul>
+
+                        <h3>Part 3: Shell Scripts & System Tools</h3>
+                        <h4>1. bluetoothctl (BlueZ Control Tool)</h4>
+                        <ul>
+                            <li><strong>What it is:</strong> The command-line interface for the BlueZ stack.</li>
+                            <li><strong>Why we use it:</strong> Used in our cleanup script to force the Pi to "forget" the phone's MAC address, ensuring the server starts from a clean slate after every disconnect.</li>
+                        </ul>
+                    </div>
+                </details>
+
                 <details>
                     <summary>Checkpoint 1: AI-Generated Documentation</summary>
                     <div class="doc-content">
