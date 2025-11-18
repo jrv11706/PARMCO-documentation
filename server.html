@@ -6,36 +6,20 @@
     <title>PARMCO Project - Server</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Syntax Highlighting (Atom One Dark Theme) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/c.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/bash.min.js"></script>
+    <script>hljs.highlightAll();</script>
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- 
-      Chosen Palette: Calm Neutral
-      - bg-stone-50 (Warm Neutral Background)
-      - text-stone-800 (Dark, readable text)
-      - bg-sky-700 / text-sky-100 (Subtle, calm blue accent)
-      - bg-stone-200 (Secondary area background)
-    -->
-    <!-- 
-      Application Structure Plan: 
-      A multi-page HTML site. This is the "Server" page.
-    -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #fdfcfb; /* bg-stone-50 */
-            color: #292524; /* text-stone-800 */
-        }
-        .chart-container {
-            position: relative;
-            width: 100%;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-            height: 300px;
-            max-height: 400px;
-        }
-        html {
-            scroll-behavior: smooth;
+            background-color: #fdfcfb;
+            color: #292524;
         }
         .sticky-nav {
             position: sticky;
@@ -45,25 +29,24 @@
             -webkit-backdrop-filter: blur(10px);
             background-color: rgba(253, 252, 251, 0.8);
         }
-        .code-block {
-            background-color: #1c1917; /* bg-stone-900 */
-            color: #e7e5e4; /* text-stone-200 */
-            padding: 1rem;
+        /* Override code block padding for Highlight.js */
+        pre code.hljs {
+            padding: 1.5rem;
             border-radius: 0.5rem;
-            overflow-x: auto;
-            font-family: monospace;
+            font-family: 'Fira Code', monospace;
             font-size: 0.875rem;
+            line-height: 1.5;
         }
         details > summary {
             cursor: pointer;
             padding: 0.75rem 1.5rem;
-            background-color: #e7e5e4; /* bg-stone-200 */
+            background-color: #e7e5e4;
             border-radius: 0.5rem;
             font-weight: 600;
             transition: background-color 0.2s;
         }
         details > summary:hover {
-            background-color: #d6d3d1; /* bg-stone-300 */
+            background-color: #d6d3d1;
         }
         details[open] > summary {
             border-bottom-left-radius: 0;
@@ -124,81 +107,115 @@
         <section id="code" class="py-16 bg-stone-100 rounded-lg">
             <h2 class="text-3xl font-bold text-center mb-12">Final Server Code</h2>
             <div class="space-y-4 max-w-4xl mx-auto">
+                
+                <!-- SERVER C CODE -->
                 <details>
                     <summary>Show `server.c` (RPi4 Final Code)</summary>
-                    <div class="code-block">
-                        <pre><code>
-#include &lt;stdio.h&gt;
-#include &lt;unistd.h&gt;
-#include &lt;string.h&gt;
-#include &lt;stdlib.h&gt;
-#include &lt;sys/socket.h&gt;
-#include &lt;bluetooth/bluetooth.h&gt;
-#include &lt;bluetooth/rfcomm.h&gt;
-#include &lt;pigpio.h&gt;
-#include &lt;pthread.h&gt;
-#include &lt;time.h&gt;
-#include &lt;math.h&gt;
+                    <pre><code class="language-c">/* * PARMCO Project - Raspberry Pi 4 Motor Control Server
+ * * This program acts as the central controller for the DC motor.
+ * It listens for Bluetooth RFCOMM connections from an Android app,
+ * drives the motor using PWM via the pigpio library, and implements
+ * a PID feedback loop to maintain target RPM.
+ */
 
-// --- Pin Definitions (BCM) ---
-#define MASTER_ENABLE_PIN 17
-#define PWM_PIN 18
-#define DIR_A_PIN 27
-#define DIR_B_PIN 22
-#define RPM_SENSOR_PIN 23
+#include &lt;stdio.h&gt;      // Standard Input/Output: Used for printf() debugging and status messages.
+#include &lt;unistd.h&gt;     // UNIX Standard: Provides access to the POSIX OS API (read, write, close, sleep).
+#include &lt;string.h&gt;     // String Handling: Used for string manipulation (strncmp, memset) when parsing commands.
+#include &lt;stdlib.h&gt;     // Standard Library: Memory allocation (malloc, free) and system calls (system()).
+#include &lt;sys/socket.h&gt; // Socket API: Fundamental library for network communication (socket, bind, accept).
+
+/* * Bluetooth Libraries (BlueZ)
+ * Why: These libraries provide the specific data structures and constants needed
+ * to interact with the Linux Bluetooth stack.
+ */
+#include &lt;bluetooth/bluetooth.h&gt; // Core Bluetooth definitions (BDADDR_ANY, addresses).
+#include &lt;bluetooth/rfcomm.h&gt;    // RFCOMM protocol definitions. RFCOMM simulates a serial port over Bluetooth,
+                                 // which is ideal for this simple stream-based communication.
+
+/*
+ * PIGPIO Library
+ * Why: This is critical for the project. Unlike standard Sysfs GPIO, pigpio uses
+ * DMA (Direct Memory Access) to provide precise hardware-timed PWM and accurate
+ * microsecond-level timestamping for interrupts. This is necessary for stable motor control.
+ */
+#include &lt;pigpio.h&gt; 
+
+/*
+ * POSIX Threads
+ * Why: The system must do three things simultaneously:
+ * 1. Listen for commands (Network I/O)
+ * 2. Count sensor pulses (Interrupts)
+ * 3. Calculate PID adjustments (Control Loop)
+ * Threads allow these loops to run concurrently without blocking each other.
+ */
+#include &lt;pthread.h&gt;
+#include &lt;time.h&gt;       // Time: Used for nanosleep to create precise loop timings.
+#include &lt;math.h&gt;       // Math: Used for fabs() (floating point absolute value) in PID error calculation.
+
+// --- Pin Definitions (Broadcom BCM Numbering) ---
+#define MASTER_ENABLE_PIN 17 // Controls the MOSFET gate or H-Bridge enable
+#define PWM_PIN 18           // Hardware PWM capable pin on RPi
+#define DIR_A_PIN 27         // H-Bridge Direction Input A
+#define DIR_B_PIN 22         // H-Bridge Direction Input B
+#define RPM_SENSOR_PIN 23    // Hall effect or optical sensor input
 
 // --- PWM Settings ---
-#define PWM_FREQUENCY 1000
-#define PWM_RANGE 255
+#define PWM_FREQUENCY 1000   // 1kHz frequency is standard for DC motors to avoid audible whine
+#define PWM_RANGE 255        // 8-bit resolution (0-255) for speed control
 
-// --- RPM CALCULATION ---
-#define PULSES_PER_REVOLUTION 3.0
-#define RPM_SEND_INTERVAL_MS 250
-#define CALCULATION_INTERVAL_MS 100  // Faster sampling for better control (10Hz)
+// --- RPM CALCULATION Constants ---
+#define PULSES_PER_REVOLUTION 3.0  // Physical property of the encoder disk
+#define RPM_SEND_INTERVAL_MS 250   // How often we send data back to the phone
+#define CALCULATION_INTERVAL_MS 100 // 10Hz sampling rate for RPM calculation
 
-// --- COMPLEMENTARY FILTER (MINIMAL LAG) ---
-// Uses instantaneous measurement for fast response, smooths only for noise
-#define COMPLEMENTARY_ALPHA 0.85  // 85% new data, 15% smoothing - very responsive!
+// --- COMPLEMENTARY FILTER ---
+// Why: Raw RPM data is noisy. A complementary filter combines:
+// 1. New data (Alpha) -> For responsiveness
+// 2. Old data (1-Alpha) -> For smoothing
+// 0.85 means we trust new data significantly more, prioritizing speed over smoothness.
+#define COMPLEMENTARY_ALPHA 0.85
 
+// Volatile variables are used because they are accessed by multiple threads/ISRs
 volatile unsigned long rpm_pulse_count = 0;
 volatile double current_rpm = 0.0;
 volatile double filtered_rpm = 0.0;
-pthread_mutex_t rpm_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t rpm_mutex = PTHREAD_MUTEX_INITIALIZER; // Protects RPM variables from race conditions
 
-// --- IMPROVED FEEDBACK CONTROLLER ---
+// --- PID CONTROLLER SETTINGS ---
 #define FEEDBACK_INTERVAL_MS 100
 const double feedback_interval_s = 0.1;
 
-// Reduced gains for more stability
-const double Kp_low = 0.0015;   // For RPM &lt; 4000
+// Gain Scheduling: Different PID gains for Low vs High RPM.
+// Motors often behave non-linearly; they may need aggressive control at low speeds
+// but gentle control at high speeds to avoid overshooting.
+const double Kp_low = 0.0015;   
 const double Ki_low = 0.010;    
 const double Kd_low = 0.0008;   
 
-const double Kp_high = 0.0020;  // For RPM &gt;= 4000
+const double Kp_high = 0.0020;  
 const double Ki_high = 0.016;   
 const double Kd_high = 0.0010;  
 
-const double MAX_INTEGRAL = 100.0;
-const double ERROR_DEADBAND = 60.0;
+const double MAX_INTEGRAL = 100.0; // Anti-windup limit
+const double ERROR_DEADBAND = 60.0; // If error is within 60 RPM, do nothing (stops jitter)
 
-// Derivative with higher cutoff (less filtering, more responsive)
 #define DERIVATIVE_FILTER_ALPHA 0.8
 volatile double filtered_derivative = 0.0;
 
 volatile double integral_error = 0.0;
 volatile double previous_error = 0.0;
-volatile int reset_integral_flag = 0;
-volatile double desired_rpm = 0.0;
-volatile int is_automatic_mode = 0;
+volatile int reset_integral_flag = 0; // Flags the PID loop to reset its history
+volatile double desired_rpm = 0.0;    // Target setpoint
+volatile int is_automatic_mode = 0;   // 0 = Manual, 1 = PID Auto Control
 
 // --- Global State ---
-int current_speed = 0;
+int current_speed = 0; // 0-255
 int motor_enabled = 0;
 
 // --- Function Prototypes ---
 void rpm_callback(int gpio, int level, uint32_t tick);
 
-// --- Helper for milliseconds sleep ---
+// Wrapper for nanosleep to make code readable
 void sleep_ms(long milliseconds) {
     struct timespec ts;
     ts.tv_sec = milliseconds / 1000;
@@ -206,21 +223,25 @@ void sleep_ms(long milliseconds) {
     nanosleep(&ts, NULL);
 }
 
-// --- Motor Control Functions ---
+// --- Motor Hardware Abstraction Layer ---
+// These functions wrap the raw GPIO calls into meaningful motor actions.
+
 void motor_set_speed(int speed) {
     if (speed &lt; 0) speed = 0;
     if (speed &gt; PWM_RANGE) speed = PWM_RANGE;
     current_speed = speed;
+    // Convert 0-255 range to Duty Cycle (0-1000000) required by pigpio
     int duty_cycle = (int)(((float)current_speed / (float)PWM_RANGE) * 1000000);
     gpioHardwarePWM(PWM_PIN, PWM_FREQUENCY, duty_cycle);
     printf("Speed set to %d / 255\n", current_speed);
     fflush(stdout);
 }
 
+// Safely shuts down the motor and resets PID state
 void motor_quiet_state() {
     is_automatic_mode = 0;
-    reset_integral_flag = 1;
-    gpioWrite(MASTER_ENABLE_PIN, 1);
+    reset_integral_flag = 1; // Clear PID memory
+    gpioWrite(MASTER_ENABLE_PIN, 1); // Assuming Active LOW enable or specific H-bridge logic
     motor_enabled = 0;
     gpioHardwarePWM(PWM_PIN, PWM_FREQUENCY, 0);
     current_speed = 0;
@@ -248,9 +269,10 @@ void motor_direction_ccw() {
 
 void motor_toggle_power() {
     if (motor_enabled) {
+        // Turn OFF
         is_automatic_mode = 0;
         reset_integral_flag = 1;
-        gpioWrite(MASTER_ENABLE_PIN, 1);
+        gpioWrite(MASTER_ENABLE_PIN, 1); 
         motor_enabled = 0;
         printf("MOTOR POWER: OFF\n");
         gpioWrite(DIR_A_PIN, 0);
@@ -258,57 +280,64 @@ void motor_toggle_power() {
         filtered_derivative = 0.0;
         filtered_rpm = 0.0;
     } else {
+        // Turn ON
         gpioWrite(MASTER_ENABLE_PIN, 0);
         motor_enabled = 1;
         printf("MOTOR POWER: ON\n");
-        motor_direction_cw();
+        motor_direction_cw(); // Default direction
     }
     fflush(stdout);
 }
 
-// --- RPM CALCULATION with COMPLEMENTARY FILTER ---
+// --- RPM CALCULATION THREAD ---
+// Runs independently to calculate RPM based on pulse counts.
 void* rpm_calculator_thread(void *arg) {
-    double calculation_interval_s = CALCULATION_INTERVAL_MS / 1000.0;  // 0.1s
+    double calculation_interval_s = CALCULATION_INTERVAL_MS / 1000.0;
     int first_reading = 1;
 
     while(1) {
         sleep_ms(CALCULATION_INTERVAL_MS);
         
-        // Atomic pulse count reading
-        gpioSetISRFunc(RPM_SENSOR_PIN, FALLING_EDGE, 0, NULL);
+        // ATOMIC SECTION START
+        // We must temporarily disable the ISR callback to read and reset the counter safely.
+        // If an interrupt happened *while* we were reading 'rpm_pulse_count', data would corrupt.
+        gpioSetISRFunc(RPM_SENSOR_PIN, FALLING_EDGE, 0, NULL); // Disable ISR
         unsigned long pulses = rpm_pulse_count;
         rpm_pulse_count = 0;
-        gpioSetISRFunc(RPM_SENSOR_PIN, FALLING_EDGE, 0, rpm_callback);
+        gpioSetISRFunc(RPM_SENSOR_PIN, FALLING_EDGE, 0, rpm_callback); // Re-enable ISR
+        // ATOMIC SECTION END
 
-        // Calculate instantaneous RPM
+        // Math: (Pulses / Pulses_Per_Rev) / Time_In_Seconds * 60 Seconds_Per_Minute
         double revolutions = pulses / PULSES_PER_REVOLUTION;
         double instantaneous_rpm = (revolutions / calculation_interval_s) * 60.0;
         
+        // Lock mutex to update the global RPM variable safely
         pthread_mutex_lock(&rpm_mutex);
         
         if (first_reading) {
-            // Initialize filter with first reading
             filtered_rpm = instantaneous_rpm;
             first_reading = 0;
         } else {
-            // Complementary filter: mostly new data, slight smoothing
+            // Apply Low-Pass Complementary Filter
             filtered_rpm = COMPLEMENTARY_ALPHA * instantaneous_rpm + 
                           (1.0 - COMPLEMENTARY_ALPHA) * filtered_rpm;
         }
         
-        current_rpm = filtered_rpm;  // Both use filtered value
-        
+        current_rpm = filtered_rpm;
         pthread_mutex_unlock(&rpm_mutex);
     }
     return NULL;
 }
 
-// --- RPM ISR Callback ---
+// --- INTERRUPT SERVICE ROUTINE (ISR) ---
+// Called by pigpio whenever the GPIO pin changes state (Falling Edge).
+// Keep this function extremely short! Complex logic here crashes the system.
 void rpm_callback(int gpio, int level, uint32_t tick) {
     rpm_pulse_count++;
 }
 
-// --- IMPROVED FEEDBACK CONTROLLER ---
+// --- FEEDBACK CONTROLLER THREAD (PID) ---
+// This thread implements the core control logic for Automatic Mode.
 void* feedback_controller_thread(void *arg) {
     double error;
     int adjustment;
@@ -319,6 +348,7 @@ void* feedback_controller_thread(void *arg) {
     while(1) {
         sleep_ms(FEEDBACK_INTERVAL_MS);
 
+        // Logic to reset the PID controller memory (integral windup) when switching modes
         if (reset_integral_flag) {
             integral_error = 0.0;
             previous_error = 0.0;
@@ -328,55 +358,59 @@ void* feedback_controller_thread(void *arg) {
         
         if (motor_enabled && is_automatic_mode) {
             
+            // Thread-safe read of current RPM
             pthread_mutex_lock(&rpm_mutex);
             double rpm_snapshot = current_rpm;
             pthread_mutex_unlock(&rpm_mutex);
 
+            // 1. Calculate Error
             error = desired_rpm - rpm_snapshot;
             
-            // Apply deadband to reduce oscillation at steady state
+            // 2. Deadband Check
+            // If we are "close enough" (within 60 RPM), assume error is 0.
+            // This prevents the motor from constantly twitching to fix tiny errors.
             double error_for_control = error;
             if (fabs(error) &lt; ERROR_DEADBAND) {
                 error_for_control = 0.0;
             }
             
-            // Adaptive gains based on desired RPM
+            // 3. Gain Scheduling
+            // Select tuning parameters based on speed regime.
             if (desired_rpm &lt; 4000.0) {
-                Kp = Kp_low;
-                Ki = Ki_low;
-                Kd = Kd_low;
+                Kp = Kp_low; Ki = Ki_low; Kd = Kd_low;
             } else {
-                Kp = Kp_high;
-                Ki = Ki_high;
-                Kd = Kd_high;
+                Kp = Kp_high; Ki = Ki_high; Kd = Kd_high;
             }
             
-            // Proportional term
+            // 4. Calculate P-Term
             proportional_term = Kp * error_for_control;
             
-            // Integral term with anti-windup
+            // 5. Calculate I-Term (with Anti-Windup)
             if (fabs(error) &gt; ERROR_DEADBAND) {
                 integral_error += (error * feedback_interval_s);
                 
-                // Anti-windup with clamping
+                // Clamp the integral error so it doesn't grow infinitely
                 if (integral_error &gt; MAX_INTEGRAL) integral_error = MAX_INTEGRAL;
                 if (integral_error &lt; -MAX_INTEGRAL) integral_error = -MAX_INTEGRAL;
             } else {
-                // Slowly decay integral when in deadband to prevent buildup
+                // If inside deadband, slowly bleed off integral error to stabilize
                 integral_error *= 0.95;
             }
             integral_term = Ki * integral_error;
             
-            // Derivative term with light filtering
+            // 6. Calculate D-Term
+            // Calculate slope of error. Filter it to prevent noise spikes from causing erratic behavior.
             double raw_derivative = (error - previous_error) / feedback_interval_s;
             filtered_derivative = DERIVATIVE_FILTER_ALPHA * raw_derivative + 
                                  (1.0 - DERIVATIVE_FILTER_ALPHA) * filtered_derivative;
             derivative_term = Kd * filtered_derivative;
             
-            // Calculate adjustment
+            // 7. Combine Output
             adjustment = (int)(proportional_term + integral_term + derivative_term);
             
-            // Rate limiting to prevent violent changes
+            // 8. Output Limiting (Slew Rate Limiting)
+            // Prevent the motor speed from jumping more than 15 units per cycle.
+            // This protects the mechanical gears and power supply.
             if (adjustment &gt; 15) adjustment = 15;
             if (adjustment &lt; -15) adjustment = -15;
             
@@ -384,7 +418,7 @@ void* feedback_controller_thread(void *arg) {
             motor_set_speed(new_speed);
             previous_error = error;
             
-            // Debug output every 20 cycles (2 seconds)
+            // Logging for tuning purposes
             static int debug_counter = 0;
             if (++debug_counter &gt;= 20) {
                 printf("[PID] Target: %.1f, Actual: %.1f, Error: %.1f, P: %.2f, I: %.2f, D: %.2f, Adj: %d, Speed: %d\n",
@@ -397,11 +431,11 @@ void* feedback_controller_thread(void *arg) {
     return NULL;
 }
 
-// --- Command Handler ---
+// --- Command Parser ---
 void handle_command(char *command) {
     if (strncmp(command, "START_STOP", 10) == 0) motor_toggle_power();
     else if (strncmp(command, "SPEED_UP", 8) == 0) {
-        is_automatic_mode = 0;
+        is_automatic_mode = 0; // Manual override disables auto mode
         reset_integral_flag = 1;
         motor_set_speed(current_speed + 25);
     }
@@ -423,10 +457,11 @@ void handle_command(char *command) {
         printf("Mode set to MANUAL\n"); fflush(stdout);
     }
     else if (strncmp(command, "SET_RPM:", 8) == 0) {
+        // Parse the numeric value from the command string
         double rpm_from_app = 0.0;
         if (sscanf(command + 8, "%lf", &rpm_from_app) == 1) {
             desired_rpm = rpm_from_app;
-            is_automatic_mode = 1;
+            is_automatic_mode = 1; // Setting RPM implies Auto Mode
             reset_integral_flag = 1;
             printf("Desired RPM set to %.2f\n", desired_rpm);
         } else {
@@ -436,105 +471,109 @@ void handle_command(char *command) {
     }
 }
 
-// --- Client Handling Threads ---
+// --- THREADING FOR CLIENTS ---
+// Structure to pass arguments to client threads
 typedef struct {
     int client_socket;
-    int *is_connected;
+    int *is_connected; // Shared flag to signal disconnection between read/write threads
 } client_thread_args_t;
 
+// Reads data FROM the App
 void* client_read_thread(void *args_ptr) {
     client_thread_args_t *args = (client_thread_args_t*)args_ptr;
     int client = args->client_socket;
     char buf[1024] = { 0 };
     int bytes_read;
+
+    // Blocking read loop
     while(1) {
         bytes_read = read(client, buf, sizeof(buf));
-        if( bytes_read &lt;= 0 ) break;
-        buf[bytes_read] = '\0';
+        if( bytes_read &lt;= 0 ) break; // 0 or -1 indicates disconnect/error
+        buf[bytes_read] = '\0';      // Null-terminate the received string
         printf("Received: [%s]", buf);
         fflush(stdout);
         handle_command(buf);
     }
+    
+    // Cleanup sequence
     printf("Client read thread exiting. Setting disconnect flag.\n");
     fflush(stdout);
-    *(args-&gt;is_connected) = 0;
-    motor_quiet_state();
+    *(args->is_connected) = 0; // Signal the write thread to stop
+    motor_quiet_state();       // Safety: Stop motor on disconnect
     close(client);
+    
     printf("Client disconnected. Clearing paired devices...\n");
     fflush(stdout);
+    // Run external script to ensure clean Bluetooth state for next connection
     system("/usr/local/bin/clear-bt-devices.sh");
+    
     printf("Ready for new connection.\n");
     fflush(stdout);
     free(args);
     return NULL;
 }
 
-// --- MODIFIED: Client Write Thread ---
+// Writes data TO the App (RPM and PWM status)
 void* client_write_thread(void *args_ptr) {
     client_thread_args_t *args = (client_thread_args_t*)args_ptr;
     int client = args->client_socket;
     char rpm_buf[32];
-    char pwm_buf[32]; // NEW buffer for PWM data
+    char pwm_buf[32]; 
 
-    while(*(args-&gt;is_connected)) {
-        // Get RPM
+    // Loop continues as long as the read thread says we are connected
+    while(*(args->is_connected)) {
         pthread_mutex_lock(&rpm_mutex);
         double rpm = current_rpm;
         pthread_mutex_unlock(&rpm_mutex);
+        
+        // Format strings
         snprintf(rpm_buf, sizeof(rpm_buf), "RPM:%.1f\n", rpm);
-
-        // --- NEW: Get current speed (0-255) ---
-        // This is thread-safe because current_speed is only
-        // written by the feedback_controller_thread or handle_command,
-        // and this read is atomic.
         int speed = current_speed; 
         snprintf(pwm_buf, sizeof(pwm_buf), "PWM:%d\n", speed);
-        // --- END NEW ---
 
-        // Send RPM
-        if (write(client, rpm_buf, strlen(rpm_buf)) &lt; 0) {
-            break; // Client disconnected
-        }
-        // --- NEW: Send PWM ---
-        if (write(client, pwm_buf, strlen(pwm_buf)) &lt; 0) {
-            break; // Client disconnected
-        }
+        // Attempt to write. If write fails, client is gone.
+        if (write(client, rpm_buf, strlen(rpm_buf)) &lt; 0) break;
+        if (write(client, pwm_buf, strlen(pwm_buf)) &lt; 0) break;
         
-        sleep_ms(RPM_SEND_INTERVAL_MS);
+        sleep_ms(RPM_SEND_INTERVAL_MS); // Limit update rate
     }
+    
     printf("Client write thread exiting.\n");
     fflush(stdout);
     free(args);
     return NULL;
 }
 
-// --- Main Server Function ---
+// --- MAIN ENTRY POINT ---
 int main(int argc, char **argv)
 {
+    // Initialize pigpio library. Must be root!
     if (gpioInitialise() &lt; 0) {
         fprintf(stderr, "pigpio initialization failed!\n");
         return 1;
     }
 
-    // Setup GPIO
+    // Setup GPIO modes
     gpioSetMode(MASTER_ENABLE_PIN, PI_OUTPUT);
     gpioSetMode(DIR_A_PIN, PI_OUTPUT);
     gpioSetMode(DIR_B_PIN, PI_OUTPUT);
     gpioSetMode(RPM_SENSOR_PIN, PI_INPUT);
-    gpioSetPullUpDown(RPM_SENSOR_PIN, PI_PUD_UP);
+    // Enable internal pull-up resistor so sensor has a default HIGH state
+    gpioSetPullUpDown(RPM_SENSOR_PIN, PI_PUD_UP); 
+    // Register the ISR (Interrupt Service Routine)
     gpioSetISRFunc(RPM_SENSOR_PIN, FALLING_EDGE, 0, rpm_callback);
-    motor_quiet_state();
+    
+    motor_quiet_state(); // Ensure safe start
 
-    // Start RPM calculator thread
+    // Create Background Threads
     pthread_t rpm_thread_id;
     if (pthread_create(&rpm_thread_id, NULL, rpm_calculator_thread, NULL)) {
         fprintf(stderr, "Failed to create RPM thread\n");
         gpioTerminate();
         return 1;
     }
-    pthread_detach(rpm_thread_id);
+    pthread_detach(rpm_thread_id); // Detach so we don't need to join() it later
 
-    // Start feedback controller thread
     pthread_t feedback_thread_id;
     if (pthread_create(&feedback_thread_id, NULL, feedback_controller_thread, NULL)) {
         fprintf(stderr, "Failed to create feedback thread\n");
@@ -543,27 +582,36 @@ int main(int argc, char **argv)
     }
     pthread_detach(feedback_thread_id);
 
-    // --- Bluetooth Setup ---
+    // --- Bluetooth Socket Setup ---
     struct sockaddr_rc loc_addr = { 0 }, rem_addr = { 0 };
     int s, client;
     socklen_t opt = sizeof(rem_addr);
+    
     printf("Starting RPi4 Bluetooth server...\n");
     fflush(stdout);
+    
+    // Allocate socket for RFCOMM (Serial Port Profile)
     s = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
+    
+    // Bind socket to the first available local Bluetooth adapter
     loc_addr.rc_family = AF_BLUETOOTH;
     loc_addr.rc_bdaddr = *BDADDR_ANY;
-    loc_addr.rc_channel = (uint8_t) 1;
+    loc_addr.rc_channel = (uint8_t) 1; // Use Channel 1
+    
     if (bind(s, (struct sockaddr *)&loc_addr, sizeof(loc_addr)) &lt; 0) {
         perror("Failed to bind socket");
         gpioTerminate();
         return 1;
     }
+    
+    // Listen for 1 incoming connection at a time
     listen(s, 1);
     printf("Waiting for connection on RFCOMM channel 1...\n");
     fflush(stdout);
 
     // --- Main Accept Loop ---
     while(1) {
+        // Block until a phone connects
         client = accept(s, (struct sockaddr *)&rem_addr, &opt);
         if (client &lt; 0) {
             perror("Failed to accept connection");
@@ -574,15 +622,16 @@ int main(int argc, char **argv)
         fprintf(stdout, "Accepted connection from %s\n", buf);
         fflush(stdout);
         
-        // Create client threads
+        // Create dedicated threads for this specific client
         client_thread_args_t *read_args = malloc(sizeof(client_thread_args_t));
         client_thread_args_t *write_args = malloc(sizeof(client_thread_args_t));
         int *is_connected_flag = malloc(sizeof(int));
         *is_connected_flag = 1;
-        read_args-&gt;client_socket = client;
-        read_args-&gt;is_connected = is_connected_flag;
-        write_args-&gt;client_socket = client;
-        write_args-&gt;is_connected = is_connected_flag;
+        
+        read_args->client_socket = client;
+        read_args->is_connected = is_connected_flag;
+        write_args->client_socket = client;
+        write_args->is_connected = is_connected_flag;
         
         pthread_t read_tid, write_tid;
         if (pthread_create(&read_tid, NULL, client_read_thread, (void*)read_args)) {
@@ -599,14 +648,60 @@ int main(int argc, char **argv)
         }
     }
 
-    // Cleanup
+    // Cleanup (Unreachable in this infinite loop design, but good practice)
     close(s);
     motor_quiet_state();
     gpioTerminate();
     return 0;
-}
-                        </code></pre>
-                    </div>
+}</code></pre>
+                </details>
+
+                <!-- BASH SCRIPT CODE -->
+                <details>
+                    <summary>Bluetooth Cleanup Script (`clear-bt-devices.sh`)</summary>
+                    <pre><code class="language-bash">#!/bin/bash
+
+# --- PARMCO Bluetooth Cleanup Script ---
+# Why: BlueZ (Linux Bluetooth stack) sometimes caches old pairings or connections
+# which can prevent the RPi from accepting a new connection after a crash or disconnect.
+# This script ensures a clean state by force-removing all paired devices.
+
+# Get a list of MAC addresses for all paired devices
+# `bluetoothctl paired-devices`: Lists devices like "Device XX:XX:XX:XX:XX:XX Name"
+# `cut -d ' ' -f 2`: Extracts just the MAC address column
+paired_devices=$(bluetoothctl paired-devices | cut -d ' ' -f 2)
+
+if [ -z "$paired_devices" ]; then
+    echo "No paired devices to remove."
+    exit 0
+fi
+
+# Loop through and remove each device found
+for device in $paired_devices; do
+    echo "Removing $device..."
+    bluetoothctl remove "$device"
+
+    # --- WAIT LOGIC ---
+    # Why: 'bluetoothctl remove' is asynchronous. Sometimes the device acts as if 
+    # it is removed but immediately reconnects if the phone is still trying to connect.
+    # We loop WHILE:
+    # 1. The device still appears in the paired list
+    # 2. AND the device is NOT connected (if it's connected, removal might be blocked/delayed)
+    
+    while bluetoothctl paired-devices | grep -q "$device" && ! bluetoothctl info "$device" | grep -q "Connected: yes"; do
+        echo "Waiting for $device to be fully removed..."
+        sleep 1
+    done
+
+    # Verification
+    if bluetoothctl info "$device" | grep -q "Connected: yes"; then
+        echo "Device $device re-connected during removal. Aborting removal."
+    else
+        echo "$device successfully removed."
+    fi
+done
+
+echo "Device clear-up complete."</code></pre>
                 </details>
 
             </div>
@@ -618,10 +713,5 @@ int main(int argc, char **argv)
         <p class="text-stone-500">ECSE 4235 Final Project - Group 5: Liam Dabelstein & Jake VanEssendelft</p>
     </footer>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // This page only contains code blocks, no other JS is needed.
-        });
-    </script>
 </body>
 </html>
