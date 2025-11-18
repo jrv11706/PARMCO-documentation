@@ -6,36 +6,20 @@
     <title>PARMCO Project - App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Syntax Highlighting (Atom One Dark Theme) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/xml.min.js"></script>
+    <script>hljs.highlightAll();</script>
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- 
-      Chosen Palette: Calm Neutral
-      - bg-stone-50 (Warm Neutral Background)
-      - text-stone-800 (Dark, readable text)
-      - bg-sky-700 / text-sky-100 (Subtle, calm blue accent)
-      - bg-stone-200 (Secondary area background)
-    -->
-    <!-- 
-      Application Structure Plan: 
-      A multi-page HTML site. This is the "App" page.
-    -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #fdfcfb; /* bg-stone-50 */
-            color: #292524; /* text-stone-800 */
-        }
-        .chart-container {
-            position: relative;
-            width: 100%;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-            height: 300px;
-            max-height: 400px;
-        }
-        html {
-            scroll-behavior: smooth;
+            background-color: #fdfcfb;
+            color: #292524;
         }
         .sticky-nav {
             position: sticky;
@@ -45,25 +29,24 @@
             -webkit-backdrop-filter: blur(10px);
             background-color: rgba(253, 252, 251, 0.8);
         }
-        .code-block {
-            background-color: #1c1917; /* bg-stone-900 */
-            color: #e7e5e4; /* text-stone-200 */
-            padding: 1rem;
+        /* Override code block padding for Highlight.js */
+        pre code.hljs {
+            padding: 1.5rem;
             border-radius: 0.5rem;
-            overflow-x: auto;
-            font-family: monospace;
+            font-family: 'Fira Code', monospace;
             font-size: 0.875rem;
+            line-height: 1.5;
         }
         details > summary {
             cursor: pointer;
             padding: 0.75rem 1.5rem;
-            background-color: #e7e5e4; /* bg-stone-200 */
+            background-color: #e7e5e4;
             border-radius: 0.5rem;
             font-weight: 600;
             transition: background-color 0.2s;
         }
         details > summary:hover {
-            background-color: #d6d3d1; /* bg-stone-300 */
+            background-color: #d6d3d1;
         }
         details[open] > summary {
             border-bottom-left-radius: 0;
@@ -102,7 +85,7 @@
             <h2 class="text-3xl font-bold text-center mb-12">The Android Application</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                 <div class="flex items-center justify-center p-8 bg-stone-200 rounded-lg shadow-inner">
-                    <img src="app_screenshot.png" alt="Final App UI" class="rounded-lg shadow-lg" style="max-height: 600px; width: auto;">
+                    <img src="app_screenshot.png" alt="Final App UI" class="rounded-lg shadow-lg" style="max-height: 600px; width: auto;" onerror="this.src='https://placehold.co/300x600/e0e0e0/757575?text=App+Screenshot%0APlaceholder'">
                 </div>
                 <div>
                     <h3 class="text-2xl font-semibold">Key Features (Kotlin)</h3>
@@ -131,10 +114,22 @@
             <div class="space-y-4 max-w-4xl mx-auto">
                 <details>
                     <summary>Show `MainActivity.kt` (Android App Final Code)</summary>
-                    <div class="code-block">
-                        <pre><code>
-package com.group5.parmco
+                    <pre><code class="language-kotlin">package com.group5.parmco
 
+/* * --- IMPORTS EXPLAINED ---
+ * Android Manifest: To access permission constants (BLUETOOTH_CONNECT, etc.)
+ * Android Annotation: SuppressLint helps handle version-specific lint errors.
+ * Android Bluetooth: The core classes for Classic Bluetooth communication.
+ * - BluetoothAdapter: Represents the local Bluetooth radio.
+ * - BluetoothDevice: Represents the remote RPi4.
+ * - BluetoothSocket: The communication endpoint (like a TCP socket).
+ * Android Content: Context/Intent/BroadcastReceiver are for app components and messaging.
+ * Android View/Widget: Classes for the UI elements (Buttons, Text, Switches).
+ * AndroidX Activity/AppCompat: Libraries for modern, backward-compatible Activities.
+ * AndroidX Core: ContextCompat helps check permissions safely across Android versions.
+ * Java IO: Input/Output streams for sending bytes over the Bluetooth socket.
+ * Java Util: UUID is required to identify the SPP (Serial Port Profile) service.
+ */
 import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
@@ -152,7 +147,6 @@ import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
-import android.widget.ProgressBar // NEW IMPORT
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -163,6 +157,7 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.util.UUID
 
+// Suppress "MissingPermission" because we manually check permissions before calling BT functions
 @SuppressLint("MissingPermission")
 class MainActivity : AppCompatActivity() {
 
@@ -170,10 +165,13 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val RPI_DEVICE_NAME = "group5pi"
+        // SPP (Serial Port Profile) UUID. This is the standard "Well Known" UUID
+        // for connecting to serial devices like the RPi RFCOMM server.
         private const val SPP_UUID_STRING = "00001101-0000-1000-8000-00805F9B34FB"
     }
 
     // --- UI Elements ---
+    // lateinits are promises that we will initialize these variables in onCreate()
     private lateinit var statusIndicator: View
     private lateinit var statusText: TextView
     private lateinit var connectButton: Button
@@ -190,22 +188,29 @@ class MainActivity : AppCompatActivity() {
     private lateinit var buttonDisconnect: Button
     private lateinit var editDesiredRpm: EditText
     private lateinit var buttonSetRpm: Button
-    private lateinit var textDesiredRpm: TextView
-    private lateinit var pwmProgressBar: ProgressBar // NEW
+    private lateinit var textDesiredRpm: TextView 
 
-    // --- Bluetooth ---
+    // --- Bluetooth Variables ---
     private var bluetoothAdapter: BluetoothAdapter? = null
+    
+    // Volatile ensures these variables are immediately visible to other threads
     @Volatile private var parmcoSocket: BluetoothSocket? = null
     private var parmcoDevice: BluetoothDevice? = null
     private val sppUuid: UUID = UUID.fromString(SPP_UUID_STRING)
     @Volatile private var outputStream: OutputStream? = null
     private var readThread: Thread? = null
 
-    // --- State ---
+    // --- State Tracking ---
     @Volatile private var isMotorRunning = false
 
-    // Permissions
-    private val bluetoothPermissions = if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.S) {
+    /*
+     * --- PERMISSIONS LOGIC ---
+     * Android 12 (API 31) introduced granular Bluetooth permissions.
+     * We must check the Android version (SDK_INT) to decide which permissions to ask for.
+     * >= API 31 (Android 12+): Needs SCAN and CONNECT permissions.
+     * < API 31 (Android 11-): Needs ACCESS_FINE_LOCATION (legacy way to find BT devices).
+     */
+    private val bluetoothPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         arrayOf(
             Manifest.permission.BLUETOOTH_SCAN,
             Manifest.permission.BLUETOOTH_CONNECT,
@@ -217,9 +222,14 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    // --- Activity Result Launchers ---
+    /*
+     * ActivityResultLauncher: The modern way to request permissions.
+     * Instead of 'startActivityForResult', we register a callback.
+     * This callback runs when the user clicks "Allow" or "Deny".
+     */
     private val requestPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions -&gt;
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            // Check if ALL requested permissions were granted
             if (permissions.values.all { it }) {
                 logToScreen(getString(R.string.log_permissions_granted))
                 startConnectionProcess()
@@ -229,8 +239,9 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+    // Launcher to ask the system to turn on Bluetooth if it's currently disabled
     private val requestEnableBluetoothLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result -&gt;
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
                 logToScreen(getString(R.string.log_bt_enabled))
                 startScan()
@@ -240,31 +251,43 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-    // --- Broadcast Receiver ---
+    /*
+     * --- BROADCAST RECEIVER ---
+     * Bluetooth scanning is asynchronous. We start a scan, and the system sends
+     * "Broadcasts" whenever a device is found. This receiver listens for those events.
+     */
     private val scanReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val action: String? = intent.action
+            
+            // Event: A device was found
             if (BluetoothDevice.ACTION_FOUND == action) {
-                val device: BluetoothDevice? = if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.TIRAMISU) {
+                // Get device object from the intent (handling API differences)
+                val device: BluetoothDevice? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
                 } else {
                     @Suppress("DEPRECATION")
                     intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
                 }
+                
                 device?.let {
                     val deviceName = it.name
                     val deviceAddress = it.address
                     if (deviceName != null) {
                         logToScreen(getString(R.string.log_found_device, deviceName, deviceAddress))
+                        
+                        // CHECK: Is this our RPi?
                         if (deviceName.equals(RPI_DEVICE_NAME, ignoreCase = true)) {
                             logToScreen(getString(R.string.log_found_rpi))
-                            bluetoothAdapter?.cancelDiscovery()
+                            bluetoothAdapter?.cancelDiscovery() // Stop scanning to save battery
                             parmcoDevice = it
-                            connectToDevice()
+                            connectToDevice() // Initiate connection
                         }
                     }
                 }
-            } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED == action) {
+            } 
+            // Event: Scanning finished naturally (timeout)
+            else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED == action) {
                 logToScreen(getString(R.string.log_scan_finished))
                 if (parmcoDevice == null) {
                     logToScreen(getString(R.string.log_error_rpi_not_found, RPI_DEVICE_NAME))
@@ -274,12 +297,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // --- Activity Lifecycle ---
+    // --- LIFECYCLE: onCreate ---
+    // Called when the app first starts.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Initialize UI elements
+        // 1. Bind Kotlin variables to XML IDs
         statusIndicator = findViewById(R.id.status_indicator)
         statusText = findViewById(R.id.status_text)
         connectButton = findViewById(R.id.connect_button)
@@ -294,15 +318,13 @@ class MainActivity : AppCompatActivity() {
         buttonDisconnect = findViewById(R.id.button_disconnect)
         editDesiredRpm = findViewById(R.id.edit_desired_rpm)
         buttonSetRpm = findViewById(R.id.button_set_rpm)
-        textDesiredRpm = findViewById(R.id.text_desired_rpm)
-        pwmProgressBar = findViewById(R.id.progress_bar_pwm) // NEW
+        textDesiredRpm = findViewById(R.id.text_desired_rpm) 
 
-        // Set initial UI state
+        // 2. Set Initial State
         statusText.text = getString(R.string.log_app_started)
         controlsGroup.visibility = View.GONE
-        pwmProgressBar.max = 100 // Set max for percentage
 
-        // Get Bluetooth adapter
+        // 3. Initialize Bluetooth Adapter
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = bluetoothManager.adapter
         if (bluetoothAdapter == null) {
@@ -311,7 +333,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // --- Set Click Listeners ---
+        // 4. Set up UI Listeners
         connectButton.setOnClickListener {
             logToScreen(getString(R.string.log_connect_clicked))
             parmcoDevice = null
@@ -324,20 +346,17 @@ class MainActivity : AppCompatActivity() {
         }
         buttonSpeedUp.setOnClickListener {
             sendCommand("SPEED_UP")
-            if (switchMode.isChecked) {
-                switchMode.isChecked = false
-            }
+            // Manual adjustment cancels auto mode
+            if (switchMode.isChecked) switchMode.isChecked = false
         }
         buttonSpeedDown.setOnClickListener {
             sendCommand("SPEED_DOWN")
-            if (switchMode.isChecked) {
-                switchMode.isChecked = false
-            }
+            if (switchMode.isChecked) switchMode.isChecked = false
         }
-        switchDirection.setOnCheckedChangeListener { _, isChecked -&gt;
+        switchDirection.setOnCheckedChangeListener { _, isChecked ->
             sendCommand(if (isChecked) "DIR_CCW" else "DIR_CW")
         }
-        switchMode.setOnCheckedChangeListener { _, isChecked -&gt;
+        switchMode.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
                 buttonSpeedUp.isEnabled = false
                 buttonSpeedDown.isEnabled = false
@@ -350,23 +369,23 @@ class MainActivity : AppCompatActivity() {
         }
         buttonDisconnect.setOnClickListener { disconnect() }
 
+        // Set RPM Listener
         buttonSetRpm.setOnClickListener {
             val rpmString = editDesiredRpm.text.toString()
             if (rpmString.isNotEmpty()) {
                 sendCommand("SET_RPM:$rpmString")
                 textDesiredRpm.text = rpmString
-                if (!switchMode.isChecked) {
-                    switchMode.isChecked = true
-                }
+                // Setting RPM implies Auto Mode
+                if (!switchMode.isChecked) switchMode.isChecked = true
             } else {
                 logToScreen("Please enter a desired RPM.\n")
             }
         }
 
-        // Register the broadcast receiver
+        // 5. Register Receiver for Bluetooth Events
         val filter = IntentFilter(BluetoothDevice.ACTION_FOUND)
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
-        if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.TIRAMISU) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(scanReceiver, filter, RECEIVER_EXPORTED)
         } else {
             @Suppress("DEPRECATION")
@@ -380,13 +399,15 @@ class MainActivity : AppCompatActivity() {
         disconnect()
     }
 
+    // Helper to update the text log on the screen
     private fun logToScreen(message: String) {
         statusText.append(message)
-        Log.d(tag, message)
+        Log.d(tag, message) // Also log to Android Studio Logcat
     }
 
-    // --- Permission and Scan Logic (Unchanged) ---
+    // --- Permissions & Connection Flow ---
     private fun checkPermissionsAndConnect() {
+        // Filter out permissions we already have
         val permissionsToRequest = bluetoothPermissions.filter {
             ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
         }
@@ -394,14 +415,17 @@ class MainActivity : AppCompatActivity() {
             logToScreen(getString(R.string.log_permissions_good))
             startConnectionProcess()
         } else {
+            // Request missing permissions
             val permsString = permissionsToRequest.joinToString()
             logToScreen(getString(R.string.log_requesting_permissions, permsString))
             requestPermissionLauncher.launch(permissionsToRequest.toTypedArray())
         }
     }
+
     private fun startConnectionProcess() {
         if (bluetoothAdapter?.isEnabled == false) {
             logToScreen(getString(R.string.log_bt_off))
+            // Ask user to enable Bluetooth
             val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             requestEnableBluetoothLauncher.launch(enableBtIntent)
         } else {
@@ -409,25 +433,28 @@ class MainActivity : AppCompatActivity() {
             startScan()
         }
     }
+
     private fun startScan() {
         if (bluetoothAdapter?.isDiscovering == true) {
             bluetoothAdapter?.cancelDiscovery()
         }
         logToScreen(getString(R.string.log_scan_starting))
         statusIndicator.setBackgroundResource(R.drawable.status_indicator_connecting)
-        bluetoothAdapter?.startDiscovery()
+        bluetoothAdapter?.startDiscovery() // Starts async scan process
     }
 
-    // --- Command/Disconnect Logic (Unchanged) ---
+    // --- Sending Commands ---
     private fun sendCommand(command: String) {
         val outStream = outputStream
         if (outStream == null) {
             logToScreen("ERROR: Not connected. Cannot send command.\n")
             return
         }
+        // Network I/O cannot be done on the main thread, start a new thread.
         Thread {
             try {
                 outStream.write("$command\n".toByteArray())
+                // To update UI from a background thread, we must use runOnUiThread
                 runOnUiThread { logToScreen("Sent: $command\n") }
             } catch (e: IOException) {
                 Log.e(tag, "Error sending command", e)
@@ -436,7 +463,7 @@ class MainActivity : AppCompatActivity() {
         }.start()
     }
 
-    // --- MODIFIED: Disconnect Function ---
+    // --- Disconnect Logic ---
     private fun disconnect() {
         if (parmcoSocket == null) return
         val socket = parmcoSocket
@@ -453,6 +480,7 @@ class MainActivity : AppCompatActivity() {
             Log.e(tag, "Error closing socket", e)
         }
 
+        // Reset UI to "Disconnected" state
         runOnUiThread {
             logToScreen("Disconnected.\n")
             statusIndicator.setBackgroundResource(R.drawable.status_indicator_denied)
@@ -460,8 +488,7 @@ class MainActivity : AppCompatActivity() {
             connectGroup.visibility = View.VISIBLE
             buttonStartStop.text = "START"
             textActualRpm.text = "--"
-            textDesiredRpm.text = "--"
-            pwmProgressBar.progress = 0 // NEW: Reset progress bar
+            textDesiredRpm.text = "--" 
 
             switchMode.isChecked = false
             buttonSpeedUp.isEnabled = true
@@ -469,33 +496,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // --- MODIFIED: Thread to read and parse RPM/PWM data ---
+    // --- Reading Data Thread ---
+    // Continually listens for "RPM:XXX" messages from the RPi
     private fun startReadThread() {
         readThread = Thread {
             val inputStream = parmcoSocket?.inputStream
             try {
-                inputStream?.bufferedReader()?.use { reader -&gt;
-                    while (parmcoSocket != null &amp;&amp; !Thread.currentThread().isInterrupted) {
+                inputStream?.bufferedReader()?.use { reader ->
+                    while (parmcoSocket != null && !Thread.currentThread().isInterrupted) {
                         val line = reader.readLine()
-                        if (line == null) {
-                            break
-                        }
-
-                        // Check for RPM data
+                        if (line == null) break // End of stream
+                        
                         if (line.startsWith("RPM:")) {
                             val rpmValue = line.substringAfter("RPM:").trim()
                             runOnUiThread {
                                 textActualRpm.text = rpmValue
-                            }
-                        }
-                        // NEW: Check for PWM data
-                        else if (line.startsWith("PWM:")) {
-                            val pwmString = line.substringAfter("PWM:").trim()
-                            val pwmValue = pwmString.toIntOrNull() ?: 0
-                            // Calculate percentage (0-255 -> 0-100)
-                            val pwmPercent = (pwmValue * 100) / 255
-                            runOnUiThread {
-                                pwmProgressBar.progress = pwmPercent
                             }
                         }
                     }
@@ -508,22 +523,27 @@ class MainActivity : AppCompatActivity() {
         readThread?.start()
     }
 
-
-    // --- Connection Logic (Unchanged) ---
+    // --- Connection Logic ---
     private fun connectToDevice() {
         Thread {
             try {
                 runOnUiThread {
                     logToScreen(getString(R.string.log_creating_socket))
                 }
+                // Use reflection or createRfcommSocketToServiceRecord to create socket
                 val method = parmcoDevice?.javaClass?.getMethod(
                     "createRfcommSocket",
                     Int::class.javaPrimitiveType
                 )
+                // Invoke the method to get a socket connected to Channel 1
                 parmcoSocket = method?.invoke(parmcoDevice, 1) as BluetoothSocket
+                
+                // Blocking call - waits for connection
                 parmcoSocket?.connect()
+                
                 outputStream = parmcoSocket?.outputStream
-                startReadThread()
+                startReadThread() // Start listening for data
+                
                 runOnUiThread {
                     logToScreen(getString(R.string.log_connected_success))
                     statusIndicator.setBackgroundResource(R.drawable.status_indicator_connected)
@@ -539,24 +559,17 @@ class MainActivity : AppCompatActivity() {
                 try {
                     parmcoSocket?.close()
                 } catch (closeException: IOException) {
-                    val closeMsg = closeException.message ?: "Unknown close exception"
-                    runOnUiThread {
-                        logToScreen(getString(R.string.log_error_socket_close, closeMsg))
-                    }
+                    // Ignore errors on close
                 }
             }
         }.start()
     }
-}
-                        </code></pre>
-                    </div>
+}</code></pre>
                 </details>
 
                 <details>
                     <summary>Show `activity_main.xml` (Android App Layout)</summary>
-                    <div class="code-block">
-                        <pre><code>
-&lt;?xml version="1.0" encoding="utf-8"?&gt;
+                    <pre><code class="language-xml">&lt;?xml version="1.0" encoding="utf-8"?&gt;
 &lt;androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -582,7 +595,7 @@ class MainActivity : AppCompatActivity() {
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.75" /&gt;
+        app:layout_constraintGuide_percent="0.65" /&gt;
 
     &lt;!-- Connection Group --&gt;
     &lt;androidx.constraintlayout.widget.ConstraintLayout
@@ -721,41 +734,17 @@ class MainActivity : AppCompatActivity() {
             app:layout_constraintStart_toEndOf="@+id/label_desired_rpm"
             app:layout_constraintTop_toTopOf="@+id/label_desired_rpm" /&gt;
 
-        &lt;!-- NEW: Duty Cycle Label --&gt;
-        &lt;TextView
-            android:id="@+id/label_duty_cycle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Duty Cycle (0-100%):"
-            android:textSize="16sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/label_desired_rpm" /&gt;
-
-        &lt;!-- NEW: Progress Bar --&gt;
-        &lt;ProgressBar
-            android:id="@+id/progress_bar_pwm"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:max="100"
-            android:progress="0"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/label_duty_cycle" /&gt;
-
         &lt;EditText
             android:id="@+id/edit_desired_rpm"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
             android:hint="Set Target RPM"
             android:inputType="number"
             app:layout_constraintEnd_toStartOf="@+id/button_set_rpm"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/progress_bar_pwm" /&gt;
+            app:layout_constraintTop_toBottomOf="@+id/label_desired_rpm" /&gt;
 
         &lt;Button
             android:id="@+id/button_set_rpm"
@@ -801,9 +790,61 @@ class MainActivity : AppCompatActivity() {
 
     &lt;/ScrollView&gt;
 
-&lt;/androidx.constraintlayout.widget.ConstraintLayout&gt;
-                        </code></pre>
-                    </div>
+&lt;/androidx.constraintlayout.widget.ConstraintLayout&gt;</code></pre>
+                </details>
+
+                <details>
+                    <summary>Show `AndroidManifest.xml` (App Permissions)</summary>
+                    <pre><code class="language-xml">&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.group5.parmco"&gt;
+
+    &lt;!-- 
+      --- BLUETOOTH PERMISSIONS ---
+      BLUETOOTH & BLUETOOTH_ADMIN: Legacy permissions (Pre-Android 12) to use BT.
+      BLUETOOTH_SCAN: (Android 12+) Required to discover devices. 
+                      neverForLocation asserts we aren't using BT to track user GPS.
+      BLUETOOTH_CONNECT: (Android 12+) Required to bond and communicate.
+      ACCESS_COARSE/FINE_LOCATION: Required for BT scanning on Android 11 and below
+                                   because BT beacons could theoretically reveal location.
+    --&gt;
+    &lt;uses-permission android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" /&gt;
+    &lt;uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" /&gt;
+    &lt;uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" /&gt;
+    &lt;uses-permission android:name="android.permission.BLUETOOTH_CONNECT" /&gt;
+    &lt;uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /&gt;
+    &lt;uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /&gt;
+    
+    &lt;!-- Tells the App Store that this app CANNOT run without Bluetooth hardware --&gt;
+    &lt;uses-feature android:name="android.hardware.bluetooth" android:required="true" /&gt;
+
+    &lt;application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.PARMCO"
+        tools:targetApi="31"&gt;
+        
+        &lt;!-- The Main Activity that launches when the icon is clicked --&gt;
+        &lt;activity
+            android:name=".MainActivity"
+            android:exported="true"&gt;
+            &lt;intent-filter&gt;
+                &lt;action android:name="android.intent.action.MAIN" /&gt;
+                &lt;category android:name="android.intent.category.LAUNCHER" /&gt;
+            &lt;/intent-filter&gt;
+        &lt;/activity&gt;
+    &lt;/application&gt;
+
+&lt;/manifest&gt;</code></pre>
                 </details>
             </div>
         </section>
@@ -814,10 +855,5 @@ class MainActivity : AppCompatActivity() {
         <p class="text-stone-500">ECSE 4235 Final Project - Group 5: Liam Dabelstein & Jake VanEssendelft</p>
     </footer>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // This page only contains code blocks, no other JS is needed.
-        });
-    </script>
 </body>
 </html>
