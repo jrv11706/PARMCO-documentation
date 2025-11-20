@@ -60,7 +60,7 @@
             <h2 class="text-3xl font-bold text-center mb-12">Project Documentation</h2>
             <div class="space-y-4">
 
-                <!-- NEW: Hardware Analysis (Top Priority) -->
+                <!-- Hardware Analysis -->
                 <details>
                     <summary>PARMCO Hardware Design & Analysis</summary>
                     <div class="doc-content">
@@ -202,7 +202,7 @@
                     </div>
                 </details>
 
-                <!-- Library Reference (Now Closed by default) -->
+                <!-- Library Reference -->
                 <details>
                     <summary>Master Library & Dependency Reference</summary>
                     <div class="doc-content">
@@ -215,7 +215,7 @@
                             <li><strong>How it works:</strong> Uses the DMA (Direct Memory Access) controller to write directly to hardware registers, unlike standard Sysfs GPIO.</li>
                             <li><strong>Why we use it:</strong> Provides jitter-free, hardware-timed PWM (crucial for motor stability) and microsecond-level timestamping for accurate RPM sensing.</li>
                         </ul>
-                        <!-- (Rest of content remains unchanged) -->
+                        
                         <h4>2. bluetooth/bluetooth.h & rfcomm.h (BlueZ Stack)</h4>
                         <ul>
                             <li><strong>What it is:</strong> Headers for BlueZ, the Linux Bluetooth protocol stack.</li>
@@ -250,6 +250,7 @@
                     </div>
                 </details>
 
+                <!-- Checkpoint 1 -->
                 <details>
                     <summary>Checkpoint 1: AI-Generated Documentation</summary>
                     <div class="doc-content">
@@ -265,6 +266,8 @@
                         </p>
                     </div>
                 </details>
+
+                <!-- Checkpoint 2 -->
                 <details>
                     <summary>Checkpoint 2: AI-Generated Documentation</summary>
                     <div class="doc-content">
@@ -284,6 +287,8 @@
                         <p><strong>Final Design (V11):</strong> The team discovered the optocoupler was unnecessary. The final design <strong>removed the optocoupler</strong> and used a simple NPN Transistor Buffer (2N3904). The RP4 GPIO now sends a low-current signal to the transistor's base, which reliably controls the MOSFET gate.</p>
                     </div>
                 </details>
+
+                <!-- Checkpoint 3 -->
                 <details>
                     <summary>Checkpoint 3: AI-Generated Documentation</summary>
                     <div class="doc-content">
@@ -310,6 +315,43 @@
                         <p><strong>Final Optimization (Gain Scheduling):</strong> To fix a final ±4% oscillation, the team implemented error-based gain scheduling. The controller now uses 4 different `Kp` multipliers based on how far the `current_rpm` is from the `desired_rpm`, allowing it to be aggressive when far away and gentle when close to the target.</p>
                     </div>
                 </details>
+
+                <!-- NEW: Final Checkpoint Timeline (Moved to Bottom) -->
+                <details>
+                    <summary>Final Checkpoint: AI Interaction Timeline</summary>
+                    <div class="doc-content">
+                        <p>This section outlines the final development push, highlighting how AI was used to implement feedback, polish the website, and generate technical documentation.</p>
+
+                        <h3>1. Progress Bar for PWM (Feedback Implementation)</h3>
+                        <p><strong>Goal:</strong> Visualize the current motor duty cycle relative to the maximum (255) as requested during the Checkpoint 3 check-off.</p>
+                        <ul>
+                            <li><strong>Challenge:</strong> The AI conversation had become too long, causing the model to reference outdated prompts when asked to update <code>server.c</code>.</li>
+                            <li><strong>Solution:</strong> We used a strict, targeted prompt: <em>"Update this server.c file to send the current PWM value... but DON'T change anything relating to the connectivity or feedback control."</em> This successfully implemented the feature without causing regressions.</li>
+                        </ul>
+
+                        <h3>2. Website Creativity & Polish</h3>
+                        <p><strong>Goal:</strong> Improve the aesthetic of the documentation site and add a "creative" element.</p>
+                        <ul>
+                            <li><strong>Visuals:</strong> Gemini was used to integrate <code>highlight.js</code> for code syntax highlighting and to refine the color palette.</li>
+                            <li><strong>Mini-Game:</strong> To satisfy the creativity requirement, we asked: <em>"Is there any way we could add a game or something fun?"</em> This resulted in the creation of the <strong>RPM Matcher</strong> game, which simulates the project's core functionality using the Web Audio API.</li>
+                        </ul>
+
+                        <h3>3. Code Cleanup & Library Documentation</h3>
+                        <p><strong>Goal:</strong> Professionalize the codebase for final submission.</p>
+                        <ul>
+                            <li><strong>Comments:</strong> A new conversation context was started to upload all source files (<code>server.c</code>, <code>MainActivity.kt</code>, scripts) and request "meaningful and helpful comments" specifically explaining <em>why</em> certain libraries were used.</li>
+                            <li><strong>Master Reference:</strong> This led to the creation of the <a href="#" class="text-sky-700 underline">Master Library & Dependency Reference</a> (see above), which aggregates all technical dependencies into a single document.</li>
+                        </ul>
+
+                        <h3>4. Hardware Documentation</h3>
+                        <p><strong>Goal:</strong> Convert hand-drawn schematic notes into digital documentation.</p>
+                        <ul>
+                            <li><strong>Process:</strong> We uploaded the final circuit diagram image and asked Gemini to "examine this and make a separate document detailing how and why the circuit works."</li>
+                            <li><strong>Result:</strong> This generated the detailed <a href="#" class="text-sky-700 underline">Hardware Design & Analysis</a> document (see above), including the "Tug of War" analysis and Bill of Materials.</li>
+                        </ul>
+                    </div>
+                </details>
+
             </div>
         </section>
     </main>
